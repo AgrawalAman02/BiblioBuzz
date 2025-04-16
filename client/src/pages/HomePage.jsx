@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 
 const HomePage = () => {
   // Fetch featured books from the API
-  const { data, error, isLoading } = useGetFeaturedBooksQuery();
+  const { data: featuredBooks, error, isLoading } = useGetFeaturedBooksQuery();
 
   return (
     <div className="py-8">
@@ -29,13 +29,13 @@ const HomePage = () => {
             <p>Failed to load featured books. Please try again later.</p>
             <p className="text-sm mt-2">{error.message || 'Unknown error'}</p>
           </div>
-        ) : data?.length === 0 ? (
+        ) : featuredBooks?.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>No featured books available at the moment.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {data?.map((book) => (
+            {featuredBooks?.map((book) => (
               <Card key={book._id} className="overflow-hidden hover:shadow-xl transition-shadow">
                 <div className="h-64 overflow-hidden">
                   <img 
