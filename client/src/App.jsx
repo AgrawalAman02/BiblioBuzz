@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/Navbar'
+import HomePage from './pages/HomePage'
 
 // Placeholder components - will be replaced with actual components later
-const Home = () => <div className="p-4 text-2xl">Home Page with Featured Books</div>
 const BookList = () => <div className="p-4 text-2xl">Book Listing Page</div>
 const BookDetail = () => <div className="p-4 text-2xl">Book Detail Page</div>
 const Profile = () => <div className="p-4 text-2xl">User Profile Page</div>
@@ -22,7 +22,7 @@ function App() {
         
         <main className="container mx-auto p-4">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/books" element={<BookList />} />
             <Route path="/books/:id" element={<BookDetail />} />
             <Route path="/profile" element={<Profile />} />

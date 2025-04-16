@@ -1,11 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
-// import { apiSlice } from '../features/api/apiSlice';
 
+// Create a simple store with no reducers yet
+// We'll add reducers incrementally as we build features
 export const store = configureStore({
   reducer: {
-    [apiSlice.reducerPath]: apiSlice.reducer,
+    // We'll add reducers here as we need them
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(apiSlice.middleware),
   devTools: true,
 });
