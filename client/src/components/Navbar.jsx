@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
 
 const Navbar = () => {
   return (
@@ -13,8 +14,8 @@ const Navbar = () => {
         </ul>
         
         <div className="flex space-x-4">
-          <button className="bg-blue-600 hover:bg-blue-800 px-4 py-2 rounded">Login</button>
-          <button className="bg-green-600 hover:bg-green-800 px-4 py-2 rounded">Register</button>
+          <Button variant="secondary" className="bg-blue-600 hover:bg-blue-800 text-white">Login</Button>
+          <Button variant="secondary" className="bg-green-600 hover:bg-green-800 text-white">Register</Button>
         </div>
       </div>
     </nav>

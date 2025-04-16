@@ -2,10 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/Navbar'
 import HomePage from './pages/HomePage'
+import BookList from './pages/BookList'
+import BookDetail from './pages/BookDetail'
 
 // Placeholder components - will be replaced with actual components later
-const BookList = () => <div className="p-4 text-2xl">Book Listing Page</div>
-const BookDetail = () => <div className="p-4 text-2xl">Book Detail Page</div>
 const Profile = () => <div className="p-4 text-2xl">User Profile Page</div>
 const ReviewForm = () => <div className="p-4 text-2xl">Review Submission Form</div>
 
