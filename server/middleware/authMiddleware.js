@@ -1,7 +1,11 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
-const protect = async (req, res, next) => {
+/**
+ * Protects routes by requiring a valid JWT
+ * Sets req.user if token is valid
+ */
+export const protect = async (req, res, next) => {
   let token;
   
   if (
@@ -15,27 +19,32 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
-      // Get user from the token
+      // Get user from the token (exclude password)
       req.user = await User.findById(decoded.id).select('-password');
       
       next();
     } catch (error) {
       console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      res.status(401);
+      throw new Error('Not authorized, token failed');
     }
   }
   
   if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+    res.status(401);
+    throw new Error('Not authorized, no token');
   }
 };
 
-const admin = (req, res, next) => {
+/**
+ * Middleware to restrict routes to admin users only
+ * Must be used after the protect middleware
+ */
+export const admin = (req, res, next) => {
   if (req.user && req.user.isAdmin) {
     next();
   } else {
-    res.status(401).json({ message: 'Not authorized as an admin' });
+    res.status(403);
+    throw new Error('Not authorized as an admin');
   }
 };
-
-module.exports = { protect, admin };
