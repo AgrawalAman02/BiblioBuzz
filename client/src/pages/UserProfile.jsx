@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -199,7 +200,7 @@ const UserProfile = () => {
         </CardContent>
         <CardFooter>
           <Button variant="outline" className="w-full" asChild>
-            <a href="/my-reviews">View My Reviews</a>
+            <Link to="/my-reviews">View My Reviews</Link>
           </Button>
         </CardFooter>
       </Card>
