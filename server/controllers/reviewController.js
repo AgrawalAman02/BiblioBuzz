@@ -29,6 +29,47 @@ export const getReviews = async (req, res) => {
 };
 
 /**
+ * Get a specific review by ID
+ * @route GET /api/reviews/:id
+ * @access Private
+ */
+export const getReviewById = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.id)
+      .populate('user', 'username');
+
+    if (!review) {
+      res.status(404);
+      throw new Error('Review not found');
+    }
+    
+    res.status(200).json(review);
+  } catch (error) {
+    res.status(res.statusCode === 200 ? 500 : res.statusCode);
+    throw new Error('Error fetching review: ' + error.message);
+  }
+};
+
+/**
+ * Get all reviews by the logged in user
+ * @route GET /api/reviews/user
+ * @access Private
+ */
+export const getUserReviews = async (req, res) => {
+  try {
+    // Find all reviews by the current user
+    const reviews = await Review.find({ user: req.user._id })
+      .populate('book', 'title author coverImage')
+      .sort({ createdAt: -1 });
+    
+    res.status(200).json(reviews);
+  } catch (error) {
+    res.status(res.statusCode === 200 ? 500 : res.statusCode);
+    throw new Error('Error fetching user reviews: ' + error.message);
+  }
+};
+
+/**
  * Create a new review
  * @route POST /api/reviews
  * @access Private

@@ -8,6 +8,9 @@ import BookList from './pages/BookList';
 import BookDetail from './pages/BookDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import UserProfile from './pages/UserProfile';
+import MyReviews from './pages/MyReviews';
+import EditReview from './pages/EditReview';
 
 function App() {
   // Check authentication status when app loads
@@ -39,12 +42,17 @@ function App() {
               {/* Protected routes that require authentication */}
               <Route path="/profile" element={
                 <ProtectedRoute>
-                  <div className="py-8">Profile page (to be implemented)</div>
+                  <UserProfile />
                 </ProtectedRoute>
               } />
               <Route path="/my-reviews" element={
                 <ProtectedRoute>
-                  <div className="py-8">My Reviews page (to be implemented)</div>
+                  <MyReviews />
+                </ProtectedRoute>
+              } />
+              <Route path="/reviews/edit/:id" element={
+                <ProtectedRoute>
+                  <EditReview />
                 </ProtectedRoute>
               } />
             </Routes>
