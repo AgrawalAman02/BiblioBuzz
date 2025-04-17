@@ -22,30 +22,22 @@ connectDB();
 
 const app = express();
 
-// CORS Configuration
-const corsOptions = {
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      'https://bibliobuzz.vercel.app',
-      'http://localhost:5173'
-    ];
-    
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+// CORS Configuration - Must be before any middleware or route handlers
+app.use(cors({
+  origin: [
+    'https://bibliobuzz.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 600, // Cache preflight request results for 10 minutes
-};
+}));
 
-// Apply CORS configuration
-app.use(cors(corsOptions));
+// Handle OPTIONS preflight for all routes
+app.options('*', cors());
 
-// Required for handling cookies
+// Required for handling cookies - must be after CORS
 app.use(cookieParser());
 
 // Body parsing middleware

@@ -6,47 +6,62 @@ import User from '../models/User.js';
  * Sets req.user if token is valid
  */
 export const protect = async (req, res, next) => {
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return next();
-  }
+  try {
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
 
-  let token;
-  
-  // First check for token in cookies (preferred method for security)
-  if (req.cookies && req.cookies.jwt) {
-    token = req.cookies.jwt;
-  } 
-  // Fallback to Authorization header for API clients
-  else if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    token = req.headers.authorization.split(' ')[1];
-  }
-  
-  if (token) {
+    let token;
+    
+    // First check for token in cookies (preferred method for security)
+    if (req.cookies && req.cookies.jwt) {
+      token = req.cookies.jwt;
+    } 
+    // Fallback to Authorization header for API clients
+    else if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized, no token'
+      });
+    }
+
     try {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       // Get user from the token (exclude password)
-      req.user = await User.findById(decoded.id).select('-password');
+      const user = await User.findById(decoded.id).select('-password');
       
-      if (!req.user) {
-        res.status(401);
-        throw new Error('User not found');
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not found'
+        });
       }
-      
+
+      req.user = user;
       next();
     } catch (error) {
       console.error('Token verification error:', error);
-      res.status(401);
-      throw new Error('Not authorized, token failed');
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized, token failed'
+      });
     }
-  } else {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error in auth middleware'
+    });
   }
 };
 
@@ -55,14 +70,24 @@ export const protect = async (req, res, next) => {
  * Must be used after the protect middleware
  */
 export const admin = (req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    return next();
-  }
+  try {
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
 
-  if (req.user && req.user.isAdmin) {
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized as an admin'
+      });
+    }
+
     next();
-  } else {
-    res.status(403);
-    throw new Error('Not authorized as an admin');
+  } catch (error) {
+    console.error('Admin middleware error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error in admin middleware'
+    });
   }
 };

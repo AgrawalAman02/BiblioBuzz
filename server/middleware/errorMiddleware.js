@@ -12,13 +12,20 @@ export const notFound = (req, res, next) => {
  * Sends standardized error responses with appropriate status codes
  */
 export const errorHandler = (err, req, res, next) => {
-  // Set status code (use 500 as fallback if status code wasn't set)
+  // Log the error for debugging
+  console.error('Error:', err);
+
+  // If response status is still 200, set it to 500
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   
-  console.error(`Error: ${err.message}`);
-  console.error(err.stack);
-  
+  // Ensure CORS headers are set even in error responses
+  res.header('Access-Control-Allow-Credentials', 'true');
+  if (req.headers.origin) {
+    res.header('Access-Control-Allow-Origin', req.headers.origin);
+  }
+
   res.status(statusCode).json({
+    success: false,
     message: err.message,
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,
   });
