@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Review from '../models/Review.js';
 import jwt from 'jsonwebtoken';
 
 /**
@@ -150,12 +151,17 @@ export const getMe = async (req, res) => {
       res.status(404);
       throw new Error('User not found');
     }
+
+    // Get the user's review count
+    const reviewCount = await Review.countDocuments({ user: user._id });
     
     res.status(200).json({
       _id: user._id,
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
+      createdAt: user.createdAt,
+      reviewCount
     });
   } catch (error) {
     res.status(res.statusCode === 200 ? 500 : res.statusCode);
@@ -174,7 +180,13 @@ export const getUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
     
     if (user) {
-      res.json(user);
+      // Get the user's review count
+      const reviewCount = await Review.countDocuments({ user: user._id });
+      
+      res.json({
+        ...user.toObject(),
+        reviewCount
+      });
     } else {
       res.status(404);
       throw new Error('User not found');
@@ -206,6 +218,9 @@ export const updateUserProfile = async (req, res) => {
       
       const updatedUser = await user.save();
       
+      // Get the user's review count
+      const reviewCount = await Review.countDocuments({ user: updatedUser._id });
+      
       // Generate a new token and set the cookie
       const token = generateToken(updatedUser._id);
       setTokenCookie(res, token);
@@ -215,6 +230,8 @@ export const updateUserProfile = async (req, res) => {
         username: updatedUser.username,
         email: updatedUser.email,
         isAdmin: updatedUser.isAdmin,
+        createdAt: updatedUser.createdAt,
+        reviewCount
       });
     } else {
       res.status(404);
