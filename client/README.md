@@ -2,6 +2,22 @@
 
 The frontend application for BiblioBuzz, built with React, Redux Toolkit, and Tailwind CSS.
 
+## 🌐 Live Demo
+
+Visit the live application at [https://bibliobuzz.vercel.app](https://bibliobuzz.vercel.app)
+
+## 🚀 Deployment Status
+
+- Platform: Vercel
+- Status: ✅ Live
+- Auto-deployment: Enabled from main branch
+- Build Settings:
+  - Framework Preset: Vite
+  - Build Command: `npm run build`
+  - Output Directory: `dist`
+  - Install Command: `npm install`
+  - Node.js Version: 18.x
+
 ## 🛠 Setup
 
 1. Install dependencies:
@@ -134,9 +150,10 @@ Using Shadcn UI components with Tailwind CSS:
 
 ## 🔧 Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| VITE_API_URL | Backend API URL | http://localhost:5000 |
+| Variable | Description | Default | Production Value |
+|----------|-------------|---------|------------------|
+| VITE_API_URL | Backend API URL | http://localhost:5000 | https://bibliobuzz-api.onrender.com |
+| VITE_ENV | Environment indicator | development | production |
 
 ## 📝 Development Notes
 

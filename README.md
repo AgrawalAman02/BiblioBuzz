@@ -2,6 +2,13 @@
 
 BiblioBuzz is a full-stack web application for book lovers to discover, review, and discuss books. Built with React, Node.js, Express, and MongoDB, it offers a rich feature set for both regular users and administrators.
 
+## 🌐 Live Demo
+
+- Frontend: [https://bibliobuzz.vercel.app](https://bibliobuzz.vercel.app)
+- Backend API: [https://bibliobuzz-api.onrender.com](https://bibliobuzz-api.onrender.com)
+
+> Note: The backend is hosted on Render's free tier, which means the server may take 30-60 seconds to wake up on the first request after a period of inactivity.
+
 ## 🌟 Features
 
 ### User Features
@@ -21,6 +28,29 @@ BiblioBuzz is a full-stack web application for book lovers to discover, review, 
 - Access to all reviews
 - Monitor user activity
 - Full CRUD operations on books
+
+## 🚀 Deployment Status
+
+### Frontend (Vercel)
+- Status: ✅ Deployed
+- Platform: Vercel
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Environment Variables Required:
+  - `VITE_API_URL`: Backend API URL
+  - `VITE_ENV`: Production environment indicator
+
+### Backend (Render)
+- Status: ✅ Deployed
+- Platform: Render
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Environment Variables Required:
+  - `PORT`: Server port (default: 5000)
+  - `MONGO_URI`: MongoDB connection string
+  - `JWT_SECRET`: Secret key for JWT tokens
+  - `NODE_ENV`: Set to 'production'
+  - `CLIENT_URL`: Frontend URL for CORS
 
 ## 📝 Test Accounts
 

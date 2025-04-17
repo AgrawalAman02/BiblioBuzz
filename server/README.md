@@ -2,6 +2,32 @@
 
 Node.js/Express backend for BiblioBuzz with MongoDB database.
 
+## 🌐 Live API
+
+The API is live at [https://bibliobuzz-api.onrender.com](https://bibliobuzz-api.onrender.com)
+
+> Note: This API is hosted on Render's free tier. The server goes to sleep after 15 minutes of inactivity and may take 30-60 seconds to wake up on the first request.
+
+## 🚀 Deployment Status
+
+- Platform: Render
+- Status: ✅ Live
+- Auto-deployment: Enabled from main branch
+- Build Settings:
+  - Runtime: Node 18.x
+  - Build Command: `npm install`
+  - Start Command: `npm start`
+  - Health Check Path: `/health`
+
+### Current Environment Variables
+```
+NODE_ENV=production
+PORT=5000
+MONGO_URI=<MongoDB Atlas URI>
+JWT_SECRET=<Secret Key>
+CLIENT_URL=https://bibliobuzz.vercel.app
+```
+
 ## 🛠 Setup
 
 1. Install dependencies:
