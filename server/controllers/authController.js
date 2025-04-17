@@ -22,8 +22,10 @@ const setTokenCookie = (res, token) => {
   // Set JWT as HTTP-only cookie
   res.cookie('jwt', token, {
     httpOnly: true, // Prevents JavaScript access
-    secure: process.env.NODE_ENV !== 'development', // Use secure in production
-    sameSite: 'strict', // CSRF protection
+    secure: true, // Always use secure in production and development for cross-origin
+    sameSite: 'none', // Required for cross-origin cookies
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined, // Match domain in production
+    path: '/',
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
 };
@@ -125,9 +127,13 @@ export const loginUser = async (req, res) => {
  */
 export const logoutUser = async (req, res) => {
   try {
-    // Clear the JWT cookie
+    // Clear the JWT cookie with same settings as when setting it
     res.cookie('jwt', '', {
       httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined,
+      path: '/',
       expires: new Date(0), // Expire immediately
     });
     

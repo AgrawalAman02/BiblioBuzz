@@ -30,12 +30,7 @@ const corsOptions = {
       'http://localhost:5173'
     ];
     
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
-    if (allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -43,15 +38,14 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 600, // Cache preflight request results for 10 minutes
 };
 
 // Apply CORS configuration
 app.use(cors(corsOptions));
 
-// Cookie parser middleware
+// Required for handling cookies
 app.use(cookieParser());
 
 // Body parsing middleware
