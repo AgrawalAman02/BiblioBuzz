@@ -1,11 +1,15 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { getCookie } from '@/lib/cookie';
 
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const reviewApi = createApi({
   reducerPath: 'reviewApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: `${baseUrl}/api`,
+    credentials: 'include',
     prepareHeaders: (headers) => {
+      headers.set('Content-Type', 'application/json');
       const token = getCookie('jwt');
       if (token) {
         headers.set('authorization', `Bearer ${token}`);

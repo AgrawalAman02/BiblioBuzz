@@ -1,10 +1,12 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setCredentials, logout } from '@/features/auth/authSlice';
 
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: `${baseUrl}/api`,
     credentials: 'include', // Include cookies with every request
     prepareHeaders: (headers) => {
       // Add required content type

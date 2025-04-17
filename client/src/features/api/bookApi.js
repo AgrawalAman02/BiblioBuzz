@@ -1,9 +1,11 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
+const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const bookApi = createApi({
   reducerPath: 'bookApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
+    baseUrl: `${baseUrl}/api`,
     credentials: 'include', // Include cookies with every request
     prepareHeaders: (headers) => {
       // Set content type
