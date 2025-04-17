@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { authApi } from './authApi';
 
 export const reviewApi = createApi({
   reducerPath: 'reviewApi',
@@ -68,20 +69,19 @@ export const reviewApi = createApi({
         url: `/reviews/${id}/like`,
         method: 'PUT',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Review', id }, 'Reviews'],
+      invalidatesTags: (result, error, id) => [
+        { type: 'Review', id }, 
+        'Reviews', 
+        'UserReviews'
+      ],
       async onQueryStarted(id, { dispatch, queryFulfilled }) {
         try {
-          const { data } = await queryFulfilled;
-          dispatch(
-            reviewApi.util.updateQueryData('getReviews', undefined, (draft) => {
-              const review = draft.find((r) => r._id === id);
-              if (review) {
-                review.likes = data.likes;
-                review.hasLiked = true;
-              }
-            })
-          );
-        } catch {}
+          await queryFulfilled;
+          // Invalidate the user data to refresh likedReviews array
+          dispatch(authApi.util.invalidateTags(['User']));
+        } catch (err) {
+          console.error('Error liking review:', err);
+        }
       },
     }),
 
@@ -91,20 +91,19 @@ export const reviewApi = createApi({
         url: `/reviews/${id}/unlike`,
         method: 'PUT',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Review', id }, 'Reviews'],
+      invalidatesTags: (result, error, id) => [
+        { type: 'Review', id }, 
+        'Reviews', 
+        'UserReviews'
+      ],
       async onQueryStarted(id, { dispatch, queryFulfilled }) {
         try {
-          const { data } = await queryFulfilled;
-          dispatch(
-            reviewApi.util.updateQueryData('getReviews', undefined, (draft) => {
-              const review = draft.find((r) => r._id === id);
-              if (review) {
-                review.likes = data.likes;
-                review.hasLiked = false;
-              }
-            })
-          );
-        } catch {}
+          await queryFulfilled;
+          // Invalidate the user data to refresh likedReviews array
+          dispatch(authApi.util.invalidateTags(['User']));
+        } catch (err) {
+          console.error('Error unliking review:', err);
+        }
       },
     }),
   }),
