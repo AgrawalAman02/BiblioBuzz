@@ -15,11 +15,9 @@ import MyReviews from './pages/MyReviews';
 import EditReview from './pages/EditReview';
 
 function App() {
-  // Check authentication status when app loads
-  // Skip if no user info in local storage to avoid unnecessary requests
-  const { isLoading } = useGetMeQuery(undefined, {
-    skip: !localStorage.getItem('userInfo')
-  });
+  // Always check authentication status when app loads
+  // We want to check even if no userInfo in localStorage because the cookie might still be valid
+  const { isLoading } = useGetMeQuery();
 
   return (
     <Router>

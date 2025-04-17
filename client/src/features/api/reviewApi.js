@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { getCookie } from '@/lib/cookie';
+import { logout } from '@/features/auth/authSlice';
 
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -10,10 +10,6 @@ export const reviewApi = createApi({
     credentials: 'include',
     prepareHeaders: (headers) => {
       headers.set('Content-Type', 'application/json');
-      const token = getCookie('jwt');
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
       return headers;
     },
   }),
@@ -29,6 +25,15 @@ export const reviewApi = createApi({
     getUserReviews: builder.query({
       query: () => '/reviews/user',
       providesTags: ['Reviews'],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+        } catch (err) {
+          if (err.error?.status === 401) {
+            dispatch(logout());
+          }
+        }
+      },
     }),
     getReview: builder.query({
       query: (id) => `/reviews/${id}`,
@@ -62,11 +67,9 @@ export const reviewApi = createApi({
         url: `/reviews/${id}/like`,
         method: 'PUT',
       }),
-      // Optimistic update
       async onQueryStarted(id, { dispatch, queryFulfilled, getState }) {
         try {
           const result = await queryFulfilled;
-          // Update all queries that include this review
           const updateQueries = ['getReviews', 'getUserReviews'];
           updateQueries.forEach(queryName => {
             dispatch(
@@ -79,21 +82,21 @@ export const reviewApi = createApi({
               })
             );
           });
-        } catch {
-          // If the mutation fails, the cache will be rolled back automatically
+        } catch (err) {
+          if (err.error?.status === 401) {
+            dispatch(logout());
+          }
         }
-      },
+      }
     }),
     unlikeReview: builder.mutation({
       query: (id) => ({
         url: `/reviews/${id}/unlike`,
         method: 'PUT',
       }),
-      // Optimistic update
       async onQueryStarted(id, { dispatch, queryFulfilled, getState }) {
         try {
           const result = await queryFulfilled;
-          // Update all queries that include this review
           const updateQueries = ['getReviews', 'getUserReviews'];
           updateQueries.forEach(queryName => {
             dispatch(
@@ -106,10 +109,12 @@ export const reviewApi = createApi({
               })
             );
           });
-        } catch {
-          // If the mutation fails, the cache will be rolled back automatically
+        } catch (err) {
+          if (err.error?.status === 401) {
+            dispatch(logout());
+          }
         }
-      },
+      }
     }),
   }),
 });

@@ -9,16 +9,12 @@ export const authApi = createApi({
     baseUrl: `${baseUrl}/api`,
     credentials: 'include', // Include cookies with every request
     prepareHeaders: (headers) => {
-      // Add required content type
       headers.set('Content-Type', 'application/json');
-      // We no longer need to manually set the Authorization header
-      // as the HTTP-only cookie will be automatically sent with requests
       return headers;
     }
   }),
   tagTypes: ['User'],
   endpoints: (builder) => ({
-    // Register a new user
     register: builder.mutation({
       query: (userData) => ({
         url: '/auth/register',
@@ -30,12 +26,11 @@ export const authApi = createApi({
           const { data } = await queryFulfilled;
           dispatch(setCredentials(data));
         } catch (err) {
-          // Handle errors if needed
+          console.error('Registration error:', err);
         }
       },
     }),
     
-    // Login user
     login: builder.mutation({
       query: (credentials) => ({
         url: '/auth/login',
@@ -47,12 +42,11 @@ export const authApi = createApi({
           const { data } = await queryFulfilled;
           dispatch(setCredentials(data));
         } catch (err) {
-          // Handle errors if needed
+          console.error('Login error:', err);
         }
       },
     }),
     
-    // Logout user
     logout: builder.mutation({
       query: () => ({
         url: '/auth/logout',
@@ -63,12 +57,11 @@ export const authApi = createApi({
           await queryFulfilled;
           dispatch(logout());
         } catch (err) {
-          // Handle errors if needed
+          console.error('Logout error:', err);
         }
       },
     }),
     
-    // Get current user profile
     getMe: builder.query({
       query: () => '/auth/me',
       providesTags: ['User'],
@@ -77,7 +70,7 @@ export const authApi = createApi({
           const { data } = await queryFulfilled;
           dispatch(setCredentials(data));
         } catch (err) {
-          // If unauthorized, log out user locally
+          // Only logout if it's an authentication error
           if (err.error?.status === 401) {
             dispatch(logout());
           }
@@ -85,7 +78,6 @@ export const authApi = createApi({
       }
     }),
 
-    // Update user profile
     updateProfile: builder.mutation({
       query: (userData) => ({
         url: '/auth/profile',
@@ -97,7 +89,7 @@ export const authApi = createApi({
           const { data } = await queryFulfilled;
           dispatch(setCredentials(data));
         } catch (err) {
-          // Handle errors if needed
+          console.error('Profile update error:', err);
         }
       },
       invalidatesTags: ['User'],

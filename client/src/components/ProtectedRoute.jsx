@@ -8,9 +8,8 @@ import { useGetMeQuery } from '@/features/api/authApi';
  */
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useSelector((state) => state.auth);
-  const { isLoading } = useGetMeQuery(undefined, {
-    // Skip if not authenticated according to local state
-    skip: !isAuthenticated,
+  const { isLoading, isError } = useGetMeQuery(undefined, {
+    skip: false, // Never skip this query in protected routes
   });
 
   // Show loading state while checking authentication
@@ -25,8 +24,8 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
+  // Redirect to login if there's an error or not authenticated
+  if (isError || !isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
