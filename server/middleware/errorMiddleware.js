@@ -14,10 +14,11 @@ export const notFound = (req, res, next) => {
 export const errorHandler = (err, req, res, next) => {
   // Set status code (use 500 as fallback if status code wasn't set)
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode);
-
-  // Send response with error message and stack trace (in development only)
-  res.json({
+  
+  console.error(`Error: ${err.message}`);
+  console.error(err.stack);
+  
+  res.status(statusCode).json({
     message: err.message,
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,
   });

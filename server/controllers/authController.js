@@ -92,6 +92,49 @@ export const loginUser = async (req, res) => {
 };
 
 /**
+ * Log out a user
+ * @route POST /api/auth/logout
+ * @access Public
+ */
+export const logoutUser = async (req, res) => {
+  try {
+    // In a real app with HTTP-only cookies, you'd clear the cookie here
+    // For this implementation, we just send a success response since 
+    // the actual token is managed on the client side
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500);
+    throw new Error('Error logging out: ' + error.message);
+  }
+};
+
+/**
+ * Get current user's profile data
+ * @route GET /api/auth/me
+ * @access Private
+ */
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+    
+    res.status(200).json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      isAdmin: user.isAdmin,
+    });
+  } catch (error) {
+    res.status(res.statusCode === 200 ? 500 : res.statusCode);
+    throw new Error('Error fetching user data: ' + error.message);
+  }
+};
+
+/**
  * Get user profile
  * @route GET /api/auth/profile
  * @access Private

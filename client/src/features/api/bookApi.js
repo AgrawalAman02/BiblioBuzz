@@ -1,57 +1,92 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-/**
- * API slice for handling book-related operations
- * Uses RTK Query for efficient data fetching and caching
- */
 export const bookApi = createApi({
   reducerPath: 'bookApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:5000/api' }),
-  tagTypes: ['Book'],
+  baseQuery: fetchBaseQuery({
+    baseUrl: '/api',
+    credentials: 'include',
+    prepareHeaders: (headers) => {
+      // Add required content type
+      headers.set('Content-Type', 'application/json');
+      
+      // Get token from localStorage
+      const token = localStorage.getItem('userInfo') 
+        ? JSON.parse(localStorage.getItem('userInfo')).token 
+        : null;
+      
+      // If token exists, add authorization header
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      
+      return headers;
+    }
+  }),
+  tagTypes: ['Book', 'Books'],
   endpoints: (builder) => ({
-    // Get all books with optional filtering
+    // Get all books with pagination
     getBooks: builder.query({
       query: (params = {}) => {
-        const { 
-          search = '', 
-          genre = '', 
-          sort = 'title', 
-          page = 1, 
-          limit = 12 
-        } = params;
-        
-        // Build query string with parameters
-        const queryParams = new URLSearchParams();
-        if (search) queryParams.append('search', search);
-        if (genre) queryParams.append('genre', genre);
-        if (sort) queryParams.append('sort', sort);
-        if (page) queryParams.append('page', page);
-        if (limit) queryParams.append('limit', limit);
-        
+        const { page = 1, limit = 10, search = '', ...rest } = params;
         return {
-          url: `/books?${queryParams.toString()}`
+          url: '/books',
+          params: { page, limit, search, ...rest },
         };
       },
-      providesTags: ['Book']
+      providesTags: ['Books'],
     }),
     
-    // Get a specific book by ID
-    getBookById: builder.query({
-      query: (id) => `/books/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Book', id }]
+    // Get a single book by ID
+    getBook: builder.query({
+      query: (bookId) => `/books/${bookId}`,
+      providesTags: (result, error, bookId) => [{ type: 'Book', id: bookId }],
+    }),
+    
+    // Add a new book (admin only)
+    addBook: builder.mutation({
+      query: (bookData) => ({
+        url: '/books',
+        method: 'POST',
+        body: bookData,
+      }),
+      invalidatesTags: ['Books'],
+    }),
+    
+    // Update a book (admin only)
+    updateBook: builder.mutation({
+      query: ({ id, ...bookData }) => ({
+        url: `/books/${id}`,
+        method: 'PUT',
+        body: bookData,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Book', id },
+        'Books',
+      ],
+    }),
+    
+    // Delete a book (admin only)
+    deleteBook: builder.mutation({
+      query: (id) => ({
+        url: `/books/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Books'],
     }),
     
     // Get featured books
     getFeaturedBooks: builder.query({
-      query: () => `/books/featured`,
-      providesTags: ['Book']
+      query: () => '/books/featured',
+      providesTags: ['Books'],
     }),
   }),
 });
 
-// Export auto-generated hooks for usage in components
 export const {
   useGetBooksQuery,
-  useGetBookByIdQuery,
+  useGetBookQuery,
   useGetFeaturedBooksQuery,
+  useAddBookMutation,
+  useUpdateBookMutation,
+  useDeleteBookMutation,
 } = bookApi;

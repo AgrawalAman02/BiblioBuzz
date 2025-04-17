@@ -5,7 +5,7 @@ import Book from '../models/Book.js';
  * @route GET /api/books
  * @access Public
  */
-export const getBooks = async (req, res) => {
+export const getBooks = async (req, res, next) => {
   try {
     const { 
       featured, 
@@ -71,8 +71,7 @@ export const getBooks = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500);
-    throw new Error('Error fetching books: ' + error.message);
+    next(error);
   }
 };
 
@@ -81,19 +80,18 @@ export const getBooks = async (req, res) => {
  * @route GET /api/books/:id
  * @access Public
  */
-export const getBookById = async (req, res) => {
+export const getBookById = async (req, res, next) => {
   try {
     const book = await Book.findById(req.params.id);
     
     if (!book) {
       res.status(404);
-      throw new Error('Book not found');
+      return next(new Error('Book not found'));
     }
     
     res.status(200).json(book);
   } catch (error) {
-    res.status(res.statusCode === 200 ? 500 : res.statusCode);
-    throw new Error('Error fetching book: ' + error.message);
+    next(error);
   }
 };
 
@@ -102,7 +100,7 @@ export const getBookById = async (req, res) => {
  * @route POST /api/books
  * @access Private/Admin
  */
-export const createBook = async (req, res) => {
+export const createBook = async (req, res, next) => {
   try {
     const { 
       title, 
@@ -119,14 +117,14 @@ export const createBook = async (req, res) => {
     // Validation
     if (!title || !author || !description || !genre || !publicationYear || !publisher || !isbn) {
       res.status(400);
-      throw new Error('Please provide all required fields');
+      return next(new Error('Please provide all required fields'));
     }
     
     // Check if ISBN already exists
     const existingBook = await Book.findOne({ isbn });
     if (existingBook) {
       res.status(400);
-      throw new Error('Book with this ISBN already exists');
+      return next(new Error('Book with this ISBN already exists'));
     }
     
     // Create new book
@@ -146,11 +144,10 @@ export const createBook = async (req, res) => {
       res.status(201).json(book);
     } else {
       res.status(400);
-      throw new Error('Invalid book data');
+      return next(new Error('Invalid book data'));
     }
   } catch (error) {
-    res.status(res.statusCode === 200 ? 500 : res.statusCode);
-    throw new Error('Error creating book: ' + error.message);
+    next(error);
   }
 };
 
@@ -159,7 +156,7 @@ export const createBook = async (req, res) => {
  * @route PUT /api/books/:id
  * @access Private/Admin
  */
-export const updateBook = async (req, res) => {
+export const updateBook = async (req, res, next) => {
   try {
     const { 
       title, 
@@ -177,7 +174,7 @@ export const updateBook = async (req, res) => {
     
     if (!book) {
       res.status(404);
-      throw new Error('Book not found');
+      return next(new Error('Book not found'));
     }
     
     // Update fields
@@ -195,8 +192,7 @@ export const updateBook = async (req, res) => {
     
     res.status(200).json(updatedBook);
   } catch (error) {
-    res.status(res.statusCode === 200 ? 500 : res.statusCode);
-    throw new Error('Error updating book: ' + error.message);
+    next(error);
   }
 };
 
@@ -205,20 +201,19 @@ export const updateBook = async (req, res) => {
  * @route DELETE /api/books/:id
  * @access Private/Admin
  */
-export const deleteBook = async (req, res) => {
+export const deleteBook = async (req, res, next) => {
   try {
     const book = await Book.findById(req.params.id);
     
     if (!book) {
       res.status(404);
-      throw new Error('Book not found');
+      return next(new Error('Book not found'));
     }
     
     await book.deleteOne();
     res.status(200).json({ message: 'Book removed' });
   } catch (error) {
-    res.status(res.statusCode === 200 ? 500 : res.statusCode);
-    throw new Error('Error deleting book: ' + error.message);
+    next(error);
   }
 };
 
@@ -227,7 +222,7 @@ export const deleteBook = async (req, res) => {
  * @route GET /api/books/featured
  * @access Public
  */
-export const getFeaturedBooks = async (req, res) => {
+export const getFeaturedBooks = async (req, res, next) => {
   try {
     const books = await Book.find({ featured: true })
       .sort({ averageRating: -1 })
@@ -235,7 +230,6 @@ export const getFeaturedBooks = async (req, res) => {
       
     res.status(200).json(books);
   } catch (error) {
-    res.status(500);
-    throw new Error('Error fetching featured books: ' + error.message);
+    next(error);
   }
 };

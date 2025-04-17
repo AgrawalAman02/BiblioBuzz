@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { authApi } from '../api/authApi';
 
-// Get user info from local storage if it exists
+// Try to load user info from localStorage on initial load
 const userInfoFromStorage = localStorage.getItem('userInfo')
   ? JSON.parse(localStorage.getItem('userInfo'))
   : null;
@@ -11,9 +10,6 @@ const initialState = {
   isAuthenticated: !!userInfoFromStorage,
 };
 
-/**
- * Auth slice for managing user authentication state
- */
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -29,27 +25,8 @@ const authSlice = createSlice({
       localStorage.removeItem('userInfo');
     },
   },
-  // Handle login/register API success actions
-  extraReducers: (builder) => {
-    builder
-      .addMatcher(
-        authApi.endpoints.login.matchFulfilled,
-        (state, { payload }) => {
-          state.userInfo = payload;
-          state.isAuthenticated = true;
-          localStorage.setItem('userInfo', JSON.stringify(payload));
-        }
-      )
-      .addMatcher(
-        authApi.endpoints.register.matchFulfilled,
-        (state, { payload }) => {
-          state.userInfo = payload;
-          state.isAuthenticated = true;
-          localStorage.setItem('userInfo', JSON.stringify(payload));
-        }
-      );
-  },
 });
 
 export const { setCredentials, logout } = authSlice.actions;
+
 export default authSlice.reducer;

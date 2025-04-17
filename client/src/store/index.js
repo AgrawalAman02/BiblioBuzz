@@ -1,32 +1,24 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
-import { bookApi } from '../features/api/bookApi';
-import { reviewApi } from '../features/api/reviewApi';
-import { authApi } from '../features/api/authApi';
-import authReducer from '../features/auth/authSlice';
+import authReducer from '@/features/auth/authSlice';
+import { authApi } from '@/features/api/authApi';
+import { bookApi } from '@/features/api/bookApi';
+import { reviewApi } from '@/features/api/reviewApi';
 
-/**
- * Configure Redux store with API slices and reducers
- */
 export const store = configureStore({
   reducer: {
-    // API reducers
+    auth: authReducer,
+    [authApi.reducerPath]: authApi.reducer,
     [bookApi.reducerPath]: bookApi.reducer,
     [reviewApi.reducerPath]: reviewApi.reducer,
-    [authApi.reducerPath]: authApi.reducer,
-    
-    // Feature reducers
-    auth: authReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
-      bookApi.middleware,
-      reviewApi.middleware,
-      authApi.middleware
-    ),
+    getDefaultMiddleware()
+      .concat(authApi.middleware)
+      .concat(bookApi.middleware)
+      .concat(reviewApi.middleware),
 });
 
-// Enable refetchOnFocus and refetchOnReconnect
 setupListeners(store.dispatch);
 
 export default store;

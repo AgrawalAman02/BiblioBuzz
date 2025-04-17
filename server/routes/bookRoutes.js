@@ -13,6 +13,7 @@ const router = express.Router();
 
 // Public routes
 router.route('/').get(getBooks);
+// Important: Place the featured route before the :id route
 router.route('/featured').get(getFeaturedBooks);
 router.route('/:id').get(getBookById);
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useGetBookByIdQuery } from '@/features/api/bookApi';
+import { useGetBookQuery } from '@/features/api/bookApi';
 import { useGetReviewsQuery, useCreateReviewMutation, useLikeReviewMutation } from '@/features/api/reviewApi';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,7 @@ const BookDetail = () => {
   const { userInfo, isAuthenticated } = useSelector((state) => state.auth);
   
   // Fetch book and reviews data
-  const { data: book, error: bookError, isLoading: bookLoading } = useGetBookByIdQuery(id);
+  const { data: book, error: bookError, isLoading: bookLoading } = useGetBookQuery(id);
   const { data: reviews, error: reviewsError, isLoading: reviewsLoading } = useGetReviewsQuery(id);
   
   // Mutations for creating reviews and liking reviews

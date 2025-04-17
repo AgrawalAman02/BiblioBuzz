@@ -1,30 +1,36 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-/**
- * API slice for handling review-related operations
- * Uses RTK Query for efficient data fetching and caching
- */
 export const reviewApi = createApi({
   reducerPath: 'reviewApi',
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: 'http://localhost:5000/api',
-    prepareHeaders: (headers, { getState }) => {
-      // Get token from auth state
-      const token = getState().auth?.userInfo?.token;
+  baseQuery: fetchBaseQuery({
+    baseUrl: '/api',
+    credentials: 'include',
+    prepareHeaders: (headers) => {
+      // Add required content type
+      headers.set('Content-Type', 'application/json');
+      
+      // Get token from localStorage
+      const token = localStorage.getItem('userInfo') 
+        ? JSON.parse(localStorage.getItem('userInfo')).token 
+        : null;
       
       // If token exists, add authorization header
       if (token) {
-        headers.set('authorization', `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`);
       }
+      
       return headers;
-    },
+    }
   }),
-  tagTypes: ['Review'],
+  tagTypes: ['Review', 'Reviews'],
   endpoints: (builder) => ({
-    // Get reviews for a book
+    // Get reviews for a specific book
     getReviews: builder.query({
-      query: (bookId) => `/reviews?book=${bookId}`,
-      providesTags: ['Review']
+      query: (bookId) => ({
+        url: '/reviews',
+        params: { book: bookId },
+      }),
+      providesTags: ['Reviews'],
     }),
     
     // Create a new review
@@ -34,20 +40,17 @@ export const reviewApi = createApi({
         method: 'POST',
         body: reviewData,
       }),
-      invalidatesTags: ['Review']
+      invalidatesTags: ['Reviews'],
     }),
     
-    // Update an existing review
+    // Update a review
     updateReview: builder.mutation({
       query: ({ id, ...reviewData }) => ({
         url: `/reviews/${id}`,
         method: 'PUT',
         body: reviewData,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'Review', id },
-        'Review',
-      ]
+      invalidatesTags: ['Reviews'],
     }),
     
     // Delete a review
@@ -56,7 +59,7 @@ export const reviewApi = createApi({
         url: `/reviews/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Review']
+      invalidatesTags: ['Reviews'],
     }),
     
     // Like a review
@@ -65,12 +68,11 @@ export const reviewApi = createApi({
         url: `/reviews/${id}/like`,
         method: 'PUT',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Review', id }]
+      invalidatesTags: ['Reviews'],
     }),
   }),
 });
 
-// Export auto-generated hooks for usage in components
 export const {
   useGetReviewsQuery,
   useCreateReviewMutation,
