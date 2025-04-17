@@ -13,6 +13,21 @@ const generateToken = (id) => {
 };
 
 /**
+ * Set JWT token as HTTP-only cookie
+ * @param {object} res - Express response object
+ * @param {string} token - JWT token to set in cookie
+ */
+const setTokenCookie = (res, token) => {
+  // Set JWT as HTTP-only cookie
+  res.cookie('jwt', token, {
+    httpOnly: true, // Prevents JavaScript access
+    secure: process.env.NODE_ENV !== 'development', // Use secure in production
+    sameSite: 'strict', // CSRF protection
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  });
+};
+
+/**
  * Register a new user
  * @route POST /api/auth/register
  * @access Public
@@ -43,12 +58,18 @@ export const registerUser = async (req, res) => {
     });
     
     if (user) {
+      // Generate token
+      const token = generateToken(user._id);
+      
+      // Set HTTP-only cookie with the token
+      setTokenCookie(res, token);
+      
+      // Send the response with user data (without sending token in the body for added security)
       res.status(201).json({
         _id: user._id,
         username: user.username,
         email: user.email,
-        isAdmin: user.isAdmin,
-        token: generateToken(user._id)
+        isAdmin: user.isAdmin
       });
     } else {
       res.status(400);
@@ -74,12 +95,17 @@ export const loginUser = async (req, res) => {
     
     // Check if user exists and password matches
     if (user && (await user.matchPassword(password))) {
+      // Generate token
+      const token = generateToken(user._id);
+      
+      // Set HTTP-only cookie with the token
+      setTokenCookie(res, token);
+      
       res.json({
         _id: user._id,
         username: user.username,
         email: user.email,
-        isAdmin: user.isAdmin,
-        token: generateToken(user._id)
+        isAdmin: user.isAdmin
       });
     } else {
       res.status(401);
@@ -98,9 +124,12 @@ export const loginUser = async (req, res) => {
  */
 export const logoutUser = async (req, res) => {
   try {
-    // In a real app with HTTP-only cookies, you'd clear the cookie here
-    // For this implementation, we just send a success response since 
-    // the actual token is managed on the client side
+    // Clear the JWT cookie
+    res.cookie('jwt', '', {
+      httpOnly: true,
+      expires: new Date(0), // Expire immediately
+    });
+    
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
     res.status(500);
@@ -177,12 +206,15 @@ export const updateUserProfile = async (req, res) => {
       
       const updatedUser = await user.save();
       
+      // Generate a new token and set the cookie
+      const token = generateToken(updatedUser._id);
+      setTokenCookie(res, token);
+      
       res.json({
         _id: updatedUser._id,
         username: updatedUser.username,
         email: updatedUser.email,
         isAdmin: updatedUser.isAdmin,
-        token: generateToken(updatedUser._id)
       });
     } else {
       res.status(404);

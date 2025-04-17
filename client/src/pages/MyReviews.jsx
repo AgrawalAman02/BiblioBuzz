@@ -1,54 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useGetUserReviewsQuery, useDeleteReviewMutation } from '@/features/api/reviewApi';
 
 const MyReviews = () => {
-  const { userInfo, isAuthenticated } = useSelector((state) => state.auth);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   
-  useEffect(() => {
-    // Check if user is authenticated
-    if (!isAuthenticated || !userInfo) {
-      navigate('/login');
-      return;
-    }
-    
-    const fetchMyReviews = async () => {
-      try {
-        // Get token from Redux store or localStorage as fallback
-        const token = userInfo?.token || JSON.parse(localStorage.getItem('userInfo'))?.token;
-        
-        if (!token) {
-          throw new Error('Authentication token not found');
-        }
-        
-        const response = await fetch('/api/reviews/user', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.message || 'Could not fetch your reviews');
-        }
-        
-        setReviews(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  // Use RTK Query hook to get user reviews
+  const { data: reviews, isLoading, error: fetchError } = useGetUserReviewsQuery(undefined, {
+    // Skip the query if not authenticated
+    skip: !isAuthenticated,
+    // If there's an error with authentication, redirect to login
+    onError: (error) => {
+      if (error?.status === 401) {
+        navigate('/login');
       }
-    };
-    
-    fetchMyReviews();
-  }, [userInfo, isAuthenticated, navigate]);
+    }
+  });
+  
+  // Delete review mutation hook
+  const [deleteReview, { isLoading: isDeleting }] = useDeleteReviewMutation();
+  
+  // Check if the user is authenticated
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
   
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm('Are you sure you want to delete this review?')) {
@@ -56,34 +37,14 @@ const MyReviews = () => {
     }
     
     try {
-      // Get token from Redux store or localStorage as fallback
-      const token = userInfo?.token || JSON.parse(localStorage.getItem('userInfo'))?.token;
-      
-      if (!token) {
-        throw new Error('Authentication token not found');
-      }
-      
-      const response = await fetch(`/api/reviews/${reviewId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Could not delete review');
-      }
-      
-      // Remove the deleted review from the state
-      setReviews(reviews.filter(review => review._id !== reviewId));
+      await deleteReview(reviewId).unwrap();
     } catch (err) {
-      setError(err.message);
+      console.error('Failed to delete the review:', err);
     }
   };
   
   // Render loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[80vh]">
         <div className="text-center">
@@ -98,13 +59,13 @@ const MyReviews = () => {
     <div className="py-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">My Reviews</h1>
       
-      {error && (
+      {fetchError && (
         <div className="bg-red-50 text-red-600 p-4 rounded-md mb-6">
-          Error: {error}
+          Error: {fetchError.error || fetchError.data?.message || 'Could not fetch your reviews'}
         </div>
       )}
       
-      {reviews.length === 0 ? (
+      {reviews?.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <p className="text-gray-600 mb-4">You haven't written any reviews yet.</p>
           <Button asChild>
@@ -113,7 +74,7 @@ const MyReviews = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {reviews.map((review) => (
+          {reviews?.map((review) => (
             <Card key={review._id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -154,8 +115,9 @@ const MyReviews = () => {
                   <Button 
                     variant="destructive" 
                     onClick={() => handleDeleteReview(review._id)}
+                    disabled={isDeleting}
                   >
-                    Delete
+                    {isDeleting ? 'Deleting...' : 'Delete'}
                   </Button>
                 </div>
               </CardFooter>

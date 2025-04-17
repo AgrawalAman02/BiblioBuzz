@@ -4,21 +4,10 @@ export const bookApi = createApi({
   reducerPath: 'bookApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api',
-    credentials: 'include',
+    credentials: 'include', // Include cookies with every request
     prepareHeaders: (headers) => {
-      // Add required content type
+      // Set content type
       headers.set('Content-Type', 'application/json');
-      
-      // Get token from localStorage
-      const token = localStorage.getItem('userInfo') 
-        ? JSON.parse(localStorage.getItem('userInfo')).token 
-        : null;
-      
-      // If token exists, add authorization header
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-      
       return headers;
     }
   }),
@@ -38,7 +27,9 @@ export const bookApi = createApi({
     
     // Get a single book by ID
     getBook: builder.query({
-      query: (bookId) => `/books/${bookId}`,
+      query: (bookId) => ({
+        url: `/books/${bookId}`,
+      }),
       providesTags: (result, error, bookId) => [{ type: 'Book', id: bookId }],
     }),
     
@@ -76,7 +67,9 @@ export const bookApi = createApi({
     
     // Get featured books
     getFeaturedBooks: builder.query({
-      query: () => '/books/featured',
+      query: () => ({
+        url: '/books/featured',
+      }),
       providesTags: ['Books'],
     }),
   }),

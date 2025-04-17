@@ -1,13 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// Try to load user info from localStorage on initial load
-const userInfoFromStorage = localStorage.getItem('userInfo')
-  ? JSON.parse(localStorage.getItem('userInfo'))
-  : null;
-
+// Initial state is empty since we'll rely on server verification
 const initialState = {
-  userInfo: userInfoFromStorage,
-  isAuthenticated: !!userInfoFromStorage,
+  userInfo: null,
+  isAuthenticated: false,
 };
 
 const authSlice = createSlice({
@@ -17,12 +13,14 @@ const authSlice = createSlice({
     setCredentials: (state, action) => {
       state.userInfo = action.payload;
       state.isAuthenticated = true;
-      localStorage.setItem('userInfo', JSON.stringify(action.payload));
+      // No longer storing tokens in localStorage or JavaScript cookies
+      // We'll rely on HTTP-only cookies set by the server
     },
     logout: (state) => {
       state.userInfo = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('userInfo');
+      // No longer clearing tokens from localStorage or JavaScript cookies
+      // The server will handle clearing the HTTP-only cookie
     },
   },
 });

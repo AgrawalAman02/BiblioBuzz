@@ -4,33 +4,53 @@ export const reviewApi = createApi({
   reducerPath: 'reviewApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api',
-    credentials: 'include',
+    credentials: 'include', // Include cookies with every request
     prepareHeaders: (headers) => {
-      // Add required content type
+      // Set content type
       headers.set('Content-Type', 'application/json');
-      
-      // Get token from localStorage
-      const token = localStorage.getItem('userInfo') 
-        ? JSON.parse(localStorage.getItem('userInfo')).token 
-        : null;
-      
-      // If token exists, add authorization header
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-      
       return headers;
-    }
+    },
   }),
-  tagTypes: ['Review', 'Reviews'],
+  tagTypes: ['Review', 'Reviews', 'UserReviews'],
   endpoints: (builder) => ({
     // Get reviews for a specific book
+    getReviewsByBook: builder.query({
+      query: ({ bookId, page = 1, limit = 10 }) => ({
+        url: `/reviews/book/${bookId}`,
+        params: { page, limit },
+      }),
+      providesTags: (result, error, arg) => 
+        result
+          ? [...result.reviews.map(({ _id }) => ({ type: 'Review', id: _id })), 'Reviews']
+          : ['Reviews'],
+    }),
+
+    // Get all reviews for a book
     getReviews: builder.query({
       query: (bookId) => ({
         url: '/reviews',
-        params: { book: bookId },
+        params: { book: bookId }
       }),
-      providesTags: ['Reviews'],
+      providesTags: (result) => 
+        result
+          ? [...result.map(({ _id }) => ({ type: 'Review', id: _id })), 'Reviews']
+          : ['Reviews'],
+    }),
+
+    // Get reviews by current user
+    getUserReviews: builder.query({
+      query: () => ({
+        url: '/reviews/user',
+      }),
+      providesTags: ['UserReviews'],
+    }),
+    
+    // Get a single review by ID
+    getReviewById: builder.query({
+      query: (reviewId) => ({
+        url: `/reviews/${reviewId}`,
+      }),
+      providesTags: (result, error, id) => [{ type: 'Review', id }],
     }),
     
     // Create a new review
@@ -40,7 +60,7 @@ export const reviewApi = createApi({
         method: 'POST',
         body: reviewData,
       }),
-      invalidatesTags: ['Reviews'],
+      invalidatesTags: ['Reviews', 'UserReviews'],
     }),
     
     // Update a review
@@ -50,7 +70,7 @@ export const reviewApi = createApi({
         method: 'PUT',
         body: reviewData,
       }),
-      invalidatesTags: ['Reviews'],
+      invalidatesTags: ['Reviews', 'UserReviews'],
     }),
     
     // Delete a review
@@ -59,7 +79,7 @@ export const reviewApi = createApi({
         url: `/reviews/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Reviews'],
+      invalidatesTags: ['Reviews', 'UserReviews'],
     }),
     
     // Like a review
@@ -74,7 +94,10 @@ export const reviewApi = createApi({
 });
 
 export const {
+  useGetReviewsByBookQuery,
   useGetReviewsQuery,
+  useGetUserReviewsQuery,
+  useGetReviewByIdQuery,
   useCreateReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,

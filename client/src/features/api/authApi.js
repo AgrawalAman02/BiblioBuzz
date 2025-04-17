@@ -6,20 +6,11 @@ export const authApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: '/api',
     credentials: 'include', // Include cookies with every request
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers) => {
       // Add required content type
       headers.set('Content-Type', 'application/json');
-      
-      // Get token from localStorage or state
-      const token = localStorage.getItem('userInfo') 
-        ? JSON.parse(localStorage.getItem('userInfo')).token 
-        : null;
-      
-      // If token exists, add authorization header
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-      
+      // We no longer need to manually set the Authorization header
+      // as the HTTP-only cookie will be automatically sent with requests
       return headers;
     }
   }),
