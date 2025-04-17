@@ -6,7 +6,7 @@ export const reviewApi = createApi({
     baseUrl: '/api',
     credentials: 'include',
   }),
-  tagTypes: ['Review', 'Reviews'],
+  tagTypes: ['Review', 'Reviews', 'UserReviews'],
   endpoints: (builder) => ({
     // Get reviews for a specific book
     getReviews: builder.query({
@@ -26,7 +26,7 @@ export const reviewApi = createApi({
     // Get user's reviews
     getUserReviews: builder.query({
       query: () => '/reviews/user',
-      providesTags: ['Reviews'],
+      providesTags: ['UserReviews'],
     }),
 
     // Create a review
@@ -36,7 +36,7 @@ export const reviewApi = createApi({
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: ['Reviews'],
+      invalidatesTags: ['Reviews', 'UserReviews'],
     }),
 
     // Update a review
@@ -49,6 +49,7 @@ export const reviewApi = createApi({
       invalidatesTags: (result, error, { id }) => [
         { type: 'Review', id },
         'Reviews',
+        'UserReviews'
       ],
     }),
 
@@ -58,7 +59,7 @@ export const reviewApi = createApi({
         url: `/reviews/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Reviews'],
+      invalidatesTags: ['Reviews', 'UserReviews'],
     }),
 
     // Like a review
@@ -67,7 +68,44 @@ export const reviewApi = createApi({
         url: `/reviews/${id}/like`,
         method: 'PUT',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Review', id }],
+      invalidatesTags: (result, error, id) => [{ type: 'Review', id }, 'Reviews'],
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            reviewApi.util.updateQueryData('getReviews', undefined, (draft) => {
+              const review = draft.find((r) => r._id === id);
+              if (review) {
+                review.likes = data.likes;
+                review.hasLiked = true;
+              }
+            })
+          );
+        } catch {}
+      },
+    }),
+
+    // Unlike a review
+    unlikeReview: builder.mutation({
+      query: (id) => ({
+        url: `/reviews/${id}/unlike`,
+        method: 'PUT',
+      }),
+      invalidatesTags: (result, error, id) => [{ type: 'Review', id }, 'Reviews'],
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            reviewApi.util.updateQueryData('getReviews', undefined, (draft) => {
+              const review = draft.find((r) => r._id === id);
+              if (review) {
+                review.likes = data.likes;
+                review.hasLiked = false;
+              }
+            })
+          );
+        } catch {}
+      },
     }),
   }),
 });
@@ -80,4 +118,5 @@ export const {
   useUpdateReviewMutation,
   useDeleteReviewMutation,
   useLikeReviewMutation,
+  useUnlikeReviewMutation,
 } = reviewApi;

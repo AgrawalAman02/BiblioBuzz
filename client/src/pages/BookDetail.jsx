@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useGetBookQuery, useDeleteBookMutation, useUpdateBookMutation } from '@/features/api/bookApi';
-import { useGetReviewsQuery, useCreateReviewMutation, useLikeReviewMutation, useDeleteReviewMutation } from '@/features/api/reviewApi';
+import { useGetReviewsQuery, useCreateReviewMutation, useLikeReviewMutation, useDeleteReviewMutation, useUnlikeReviewMutation } from '@/features/api/reviewApi';
 import { Button } from "@/components/ui/button";
 import BookForm from '@/components/admin/BookForm';
 import ReviewCard from '@/components/review/ReviewCard';
@@ -27,6 +27,7 @@ const BookDetail = () => {
   const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation();
   const [deleteReview] = useDeleteReviewMutation();
   const [likeReview] = useLikeReviewMutation();
+  const [unlikeReview] = useUnlikeReviewMutation();
 
   const handleDeleteBook = async () => {
     if (!isAdmin) return;
@@ -58,6 +59,12 @@ const BookDetail = () => {
   };
 
   const handleReviewDelete = async (reviewId) => {
+    const review = reviews?.find(r => r._id === reviewId);
+    if (!review) return;
+    
+    // Only allow admin or review owner to delete
+    if (!isAdmin && review.user?._id !== userInfo?._id) return;
+    
     if (!window.confirm('Are you sure you want to delete this review?')) return;
     
     try {
@@ -73,6 +80,10 @@ const BookDetail = () => {
     } catch (err) {
       console.error('Failed to like review:', err);
     }
+  };
+  
+  const handleReviewEdit = (reviewId) => {
+    navigate(`/reviews/edit/${reviewId}`);
   };
 
   if (bookLoading) {
@@ -230,8 +241,15 @@ const BookDetail = () => {
                 <ReviewCard
                   key={review._id}
                   review={review}
-                  onDelete={handleReviewDelete}
+                  onDelete={isAdmin || review.user?._id === userInfo?._id ? handleReviewDelete : undefined}
                   onLike={() => handleReviewLike(review._id)}
+                  onUnlike={() => unlikeReview(review._id)}
+                  onEdit={
+                    // Allow edit if admin or review owner
+                    (isAdmin || review.user?._id === userInfo?._id) ? 
+                    () => handleReviewEdit(review._id) : 
+                    undefined
+                  }
                 />
               ))}
             </div>

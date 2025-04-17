@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useGetReviewsQuery, useDeleteReviewMutation } from '@/features/api/reviewApi';
+import { useGetReviewsQuery, useDeleteReviewMutation, useLikeReviewMutation, useUnlikeReviewMutation } from '@/features/api/reviewApi';
+import ReviewCard from '@/components/review/ReviewCard';
 
 const MyReviews = () => {
   const { isAuthenticated, userInfo } = useSelector((state) => state.auth);
@@ -11,15 +12,12 @@ const MyReviews = () => {
   
   // Get all reviews if admin, otherwise get user's reviews
   const { data: reviews, isLoading, error: fetchError } = useGetReviewsQuery(undefined, {
-    skip: !isAuthenticated,
-    onError: (error) => {
-      if (error?.status === 401) {
-        navigate('/login');
-      }
-    }
+    skip: !isAuthenticated
   });
   
-  const [deleteReview, { isLoading: isDeleting }] = useDeleteReviewMutation();
+  const [deleteReview] = useDeleteReviewMutation();
+  const [likeReview] = useLikeReviewMutation();
+  const [unlikeReview] = useUnlikeReviewMutation();
   
   React.useEffect(() => {
     if (!isAuthenticated) {
@@ -37,6 +35,10 @@ const MyReviews = () => {
     } catch (err) {
       console.error('Failed to delete the review:', err);
     }
+  };
+
+  const handleEditReview = (reviewId) => {
+    navigate(`/reviews/edit/${reviewId}`);
   };
   
   if (isLoading) {
@@ -69,7 +71,7 @@ const MyReviews = () => {
         </div>
       )}
       
-      {reviews?.length === 0 ? (
+      {!reviews?.length ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <p className="text-gray-600 mb-4">No reviews found.</p>
           <Button asChild>
@@ -79,64 +81,15 @@ const MyReviews = () => {
       ) : (
         <div className="space-y-6">
           {reviews?.map((review) => (
-            <Card key={review._id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl">{review.book.title}</CardTitle>
-                    <p className="text-gray-500">By {review.book.author}</p>
-                    {userInfo?.isAdmin && (
-                      <p className="text-sm text-gray-500 mt-1">
-                        Reviewed by: {review.user?.username}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className="text-yellow-500">
-                        {i < review.rating ? '★' : '☆'}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <h3 className="font-semibold mb-2">{review.title}</h3>
-                <p className="text-gray-700">{review.content}</p>
-                <div className="text-sm text-gray-500 mt-4">
-                  Posted on {new Date(review.createdAt).toLocaleDateString()}
-                </div>
-              </CardContent>
-              
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" asChild>
-                  <Link to={`/books/${review.book._id}`}>View Book</Link>
-                </Button>
-                <div>
-                  {/* Show edit button only to review owner */}
-                  {review.user?._id === userInfo?._id && (
-                    <Button 
-                      variant="outline" 
-                      className="mr-2" 
-                      asChild
-                    >
-                      <Link to={`/reviews/edit/${review._id}`}>Edit</Link>
-                    </Button>
-                  )}
-                  {/* Show delete button to admin or review owner */}
-                  {(userInfo?.isAdmin || review.user?._id === userInfo?._id) && (
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => handleDeleteReview(review._id)}
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? 'Deleting...' : 'Delete'}
-                    </Button>
-                  )}
-                </div>
-              </CardFooter>
-            </Card>
+            <ReviewCard
+              key={review._id}
+              review={review}
+              showBookInfo={true}
+              onDelete={userInfo?.isAdmin || review.user?._id === userInfo?._id ? handleDeleteReview : undefined}
+              onEdit={review.user?._id === userInfo?._id ? handleEditReview : undefined}
+              onLike={() => likeReview(review._id)}
+              onUnlike={() => unlikeReview(review._id)}
+            />
           ))}
         </div>
       )}

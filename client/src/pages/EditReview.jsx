@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useUpdateReviewMutation } from '@/features/api/reviewApi';
+import { useGetReviewQuery, useUpdateReviewMutation } from '@/features/api/reviewApi';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +11,17 @@ const EditReview = () => {
   const navigate = useNavigate();
   const { userInfo, isAuthenticated } = useSelector(state => state.auth);
   
+  // Use RTK Query to fetch the review data
+  const { data: review, error: fetchError, isLoading: isFetching } = useGetReviewQuery(id, {
+    skip: !isAuthenticated
+  });
+  
   const [reviewData, setReviewData] = useState({
     rating: 5,
     title: '',
     content: ''
   });
-  const [loading, setLoading] = useState(true);
+  
   const [error, setError] = useState(null);
   
   // RTK Query mutation
@@ -24,56 +29,27 @@ const EditReview = () => {
   
   // Check authentication first
   useEffect(() => {
-    if (!isAuthenticated || !userInfo) {
+    if (!isAuthenticated) {
       navigate('/login');
-      return;
     }
-  }, [isAuthenticated, userInfo, navigate]);
+  }, [isAuthenticated, navigate]);
   
-  // Fetch the review to edit
+  // Set form data when review is loaded
   useEffect(() => {
-    const fetchReview = async () => {
-      if (!isAuthenticated) return;
-      
-      try {
-        // Get token from Redux store or localStorage as fallback
-        const token = userInfo?.token || JSON.parse(localStorage.getItem('userInfo'))?.token;
-        
-        if (!token) {
-          throw new Error('Authentication token not found');
-        }
-        
-        const response = await fetch(`/api/reviews/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch review');
-        }
-        
-        // Check if this review belongs to the current user
-        if (data.user._id !== userInfo._id) {
-          throw new Error('You are not authorized to edit this review');
-        }
-        
-        setReviewData({
-          rating: data.rating,
-          title: data.title,
-          content: data.content
-        });
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+    if (review) {
+      // Check if this review belongs to the current user
+      if (review.user._id !== userInfo?._id && !userInfo?.isAdmin) {
+        setError('You are not authorized to edit this review');
+        return;
       }
-    };
-    
-    fetchReview();
-  }, [id, userInfo, isAuthenticated]);
+      
+      setReviewData({
+        rating: review.rating,
+        title: review.title,
+        content: review.content
+      });
+    }
+  }, [review, userInfo]);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -99,7 +75,7 @@ const EditReview = () => {
     }
   };
   
-  if (loading) {
+  if (isFetching) {
     return (
       <div className="flex justify-center items-center min-h-[80vh]">
         <div className="text-center">
@@ -110,13 +86,13 @@ const EditReview = () => {
     );
   }
   
-  if (error) {
+  if (fetchError || error) {
     return (
       <div className="py-8">
         <Card className="max-w-3xl mx-auto">
           <CardContent className="p-6">
             <div className="bg-red-50 text-red-600 p-4 rounded-md">
-              <p>{error}</p>
+              <p>{fetchError?.data?.message || error || 'Error loading review'}</p>
               <Button 
                 className="mt-4" 
                 onClick={() => navigate('/my-reviews')}

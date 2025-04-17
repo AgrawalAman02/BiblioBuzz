@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ReviewLike from './ReviewLike';
@@ -8,13 +9,11 @@ const ReviewCard = ({
   review, 
   onDelete,
   onLike,
+  onUnlike,
   showBookInfo = false,
-  showEditButton = false,
   onEdit
 }) => {
   const { userInfo } = useSelector((state) => state.auth);
-  const canEdit = review.user?._id === userInfo?._id;
-  const canDelete = userInfo?.isAdmin || canEdit;
 
   return (
     <Card className="mb-4">
@@ -22,10 +21,13 @@ const ReviewCard = ({
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg">{review.title}</CardTitle>
-            {showBookInfo && (
-              <p className="text-gray-600">
-                Review for: {review.book?.title} by {review.book?.author}
-              </p>
+            {showBookInfo && review.book && (
+              <Link 
+                to={`/books/${review.book._id}`}
+                className="text-blue-600 hover:underline"
+              >
+                Review for: {review.book.title} by {review.book.author}
+              </Link>
             )}
           </div>
           <div className="flex items-center space-x-2">
@@ -36,7 +38,8 @@ const ReviewCard = ({
                 </span>
               ))}
             </div>
-            {canDelete && (
+            {/* Only show delete button if onDelete is provided */}
+            {onDelete && (
               <Button
                 variant="destructive"
                 size="sm"
@@ -61,9 +64,14 @@ const ReviewCard = ({
           reviewId={review._id}
           initialLikes={review.likes}
           onLike={() => onLike(review._id)}
+          onUnlike={() => onUnlike(review._id)}
         />
-        {showEditButton && canEdit && (
-          <Button variant="outline" onClick={() => onEdit(review._id)}>
+        {/* Only show edit button if onEdit is provided */}
+        {onEdit && (
+          <Button 
+            variant="outline" 
+            onClick={() => onEdit(review._id)}
+          >
             Edit Review
           </Button>
         )}

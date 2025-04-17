@@ -1,5 +1,6 @@
 import Review from '../models/Review.js';
 import Book from '../models/Book.js';
+import User from '../models/User.js';
 
 /**
  * Get reviews for a specific book or all reviews
@@ -212,20 +213,75 @@ export const deleteReview = async (req, res) => {
 export const likeReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
+    const user = await User.findById(req.user._id);
     
     if (!review) {
       res.status(404);
       throw new Error('Review not found');
     }
     
+    // Check if user has already liked this review
+    const hasLiked = user.likedReviews.includes(review._id);
+    if (hasLiked) {
+      res.status(400);
+      throw new Error('Review already liked');
+    }
+    
+    // Add review to user's liked reviews
+    user.likedReviews.push(review._id);
+    await user.save();
+    
     // Increment likes count
     review.likes += 1;
     await review.save();
     
-    res.status(200).json({ likes: review.likes });
+    res.status(200).json({ 
+      likes: review.likes,
+      hasLiked: true
+    });
   } catch (error) {
     res.status(res.statusCode === 200 ? 500 : res.statusCode);
     throw new Error('Error liking review: ' + error.message);
+  }
+};
+
+/**
+ * Unlike a review
+ * @route PUT /api/reviews/:id/unlike
+ * @access Private
+ */
+export const unlikeReview = async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.id);
+    const user = await User.findById(req.user._id);
+    
+    if (!review) {
+      res.status(404);
+      throw new Error('Review not found');
+    }
+    
+    // Check if user has liked this review
+    const hasLiked = user.likedReviews.includes(review._id);
+    if (!hasLiked) {
+      res.status(400);
+      throw new Error('Review not liked yet');
+    }
+    
+    // Remove review from user's liked reviews
+    user.likedReviews = user.likedReviews.filter(id => id.toString() !== review._id.toString());
+    await user.save();
+    
+    // Decrement likes count
+    review.likes = Math.max(0, review.likes - 1);
+    await review.save();
+    
+    res.status(200).json({ 
+      likes: review.likes,
+      hasLiked: false
+    });
+  } catch (error) {
+    res.status(res.statusCode === 200 ? 500 : res.statusCode);
+    throw new Error('Error unliking review: ' + error.message);
   }
 };
 
