@@ -19,7 +19,10 @@ export const getReviews = async (req, res) => {
     
     // Find reviews based on query
     const reviews = await Review.find(query)
-      .populate('user', 'username')
+      .populate({
+        path: 'user',
+        select: 'username'
+      })
       .populate('book', 'title author')
       .sort({ createdAt: -1 });
     
@@ -72,6 +75,10 @@ export const getUserReviews = async (req, res) => {
   try {
     // Find all reviews by the current user
     const reviews = await Review.find({ user: req.user._id })
+      .populate({
+        path: 'user',
+        select: 'username'
+      })
       .populate('book', 'title author coverImage')
       .sort({ createdAt: -1 });
     

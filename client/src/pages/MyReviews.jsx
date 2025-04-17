@@ -3,15 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useGetReviewsQuery, useDeleteReviewMutation, useLikeReviewMutation, useUnlikeReviewMutation } from '@/features/api/reviewApi';
+import { useGetUserReviewsQuery, useDeleteReviewMutation, useLikeReviewMutation, useUnlikeReviewMutation } from '@/features/api/reviewApi';
 import ReviewCard from '@/components/review/ReviewCard';
 
 const MyReviews = () => {
   const { isAuthenticated, userInfo } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   
-  // Get all reviews if admin, otherwise get user's reviews
-  const { data: reviews, isLoading, error: fetchError } = useGetReviewsQuery(undefined, {
+  // Get only the user's reviews
+  const { data: reviews, isLoading, error: fetchError } = useGetUserReviewsQuery(undefined, {
     skip: !isAuthenticated
   });
   
