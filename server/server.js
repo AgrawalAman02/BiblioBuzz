@@ -24,39 +24,40 @@ const app = express();
 
 // CORS Configuration
 const allowedOrigins = [
-  process.env.CLIENT_URL, // Development frontend URL
   'https://bibliobuzz.vercel.app', // Production frontend URL
   'http://localhost:5173', // Local development
 ];
 
-// Add production URL if in production
-if (process.env.NODE_ENV === 'production') {
-  console.log('Production mode - Using client URLs:', allowedOrigins);
+// Add CLIENT_URL from env if it exists
+if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) {
+  allowedOrigins.push(process.env.CLIENT_URL);
 }
 
-// CORS middleware configuration
+// Log the allowed origins
+console.log('Configured allowed origins:', allowedOrigins);
+
+// Simplified CORS middleware configuration
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  exposedHeaders: ['Set-Cookie'],
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+  credentials: true
 }));
 
-// Additional headers for CORS preflight
+// Set explicit CORS headers on all responses
 app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   next();
 });
 
