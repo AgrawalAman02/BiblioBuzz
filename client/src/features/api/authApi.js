@@ -82,6 +82,24 @@ export const authApi = createApi({
         }
       }
     }),
+
+    // Update user profile
+    updateProfile: builder.mutation({
+      query: (userData) => ({
+        url: '/auth/profile',
+        method: 'PUT',
+        body: userData,
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setCredentials(data));
+        } catch (err) {
+          // Handle errors if needed
+        }
+      },
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -90,4 +108,5 @@ export const {
   useLoginMutation,
   useLogoutMutation,
   useGetMeQuery,
+  useUpdateProfileMutation,
 } = authApi;

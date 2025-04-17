@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+import { Link } from 'react-router-dom';
+import { useUpdateProfileMutation } from '@/features/api/authApi';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -15,7 +16,9 @@ const UserProfile = () => {
   });
   const [message, setMessage] = useState(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  // RTK Query mutation hook
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
 
   // Load user data into form
   useEffect(() => {
@@ -51,8 +54,6 @@ const UserProfile = () => {
       return;
     }
 
-    setIsLoading(true);
-
     try {
       // Create request body - only include password if provided
       const requestBody = {
@@ -61,36 +62,17 @@ const UserProfile = () => {
         ...(password ? { password } : {})
       };
 
-      const token = userInfo.token;
-      const response = await fetch('/api/auth/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to update profile');
-      }
-
+      // Call the updateProfile mutation
+      await updateProfile(requestBody).unwrap();
+      
       setUpdateSuccess(true);
       setFormData({
         ...formData,
         password: '',
         confirmPassword: '',
       });
-      
-      // Store the updated user info in localStorage (would normally be handled by Redux)
-      localStorage.setItem('userInfo', JSON.stringify(data));
-      
     } catch (error) {
-      setMessage({ type: 'error', text: error.message });
-    } finally {
-      setIsLoading(false);
+      setMessage({ type: 'error', text: error.data?.message || 'Failed to update profile' });
     }
   };
 
