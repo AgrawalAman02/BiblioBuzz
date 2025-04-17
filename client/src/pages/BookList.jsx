@@ -13,13 +13,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const BookList = () => {
-  // State for filters
+  // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [genreFilter, setGenreFilter] = useState('');
   const [sortBy, setSortBy] = useState('title'); // title, author, rating, year
+  const [currentPage, setCurrentPage] = useState(1);
   
   // State for debounced search
   const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, genreFilter, sortBy]);
 
   // Use effect to debounce search
   useEffect(() => {
@@ -34,7 +40,9 @@ const BookList = () => {
   const queryParams = {
     search: debouncedSearch,
     genre: genreFilter,
-    sort: sortBy === 'year' ? 'newest' : sortBy
+    sort: sortBy === 'year' ? 'newest' : sortBy,
+    page: currentPage,
+    limit: 9
   };
   
   // Fetch books from the API
@@ -148,25 +156,33 @@ const BookList = () => {
       )}
       
       {/* Pagination */}
-      {data && data.pagination && data.pagination.pages > 1 && (
-        <div className="mt-8 flex justify-center">
-          <div className="flex space-x-2">
-            {[...Array(data.pagination.pages).keys()].map(page => (
-              <button
-                key={page}
-                className={`w-10 h-10 rounded-md ${
-                  data.pagination.page === page + 1
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-800'
-                }`}
-                onClick={() => {
-                  // To be implemented when we need pagination
-                }}
-              >
-                {page + 1}
-              </button>
-            ))}
-          </div>
+      {data && data.pages > 1 && (
+        <div className="mt-8 flex justify-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+
+          {[...Array(data.pages).keys()].map(page => (
+            <Button
+              key={page + 1}
+              variant={currentPage === page + 1 ? "default" : "outline"}
+              onClick={() => setCurrentPage(page + 1)}
+            >
+              {page + 1}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, data.pages))}
+            disabled={currentPage === data.pages}
+          >
+            Next
+          </Button>
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ export const getBooks = async (req, res, next) => {
       search, 
       sort = 'title',
       page = 1, 
-      limit = 12
+      limit = 9  // Changed default limit to 9
     } = req.query;
     
     // Build filter object
@@ -45,33 +45,29 @@ export const getBooks = async (req, res, next) => {
       case 'rating':
         sortCriteria = { averageRating: -1 };
         break;
-      case 'newest':
-        sortCriteria = { publicationYear: -1 };
-        break;
       default:
         sortCriteria = { title: 1 };
     }
 
-    // Execute query with pagination
+    // Get total count for pagination
+    const total = await Book.countDocuments(filter);
+    
+    // Get books with pagination
     const books = await Book.find(filter)
       .sort(sortCriteria)
-      .limit(limitNum)
-      .skip(skip);
+      .skip(skip)
+      .limit(limitNum);
     
-    // Get total count for pagination
-    const count = await Book.countDocuments(filter);
-
     res.status(200).json({
       books,
-      pagination: {
-        total: count,
-        pages: Math.ceil(count / limitNum),
-        page: pageNum,
-        limit: limitNum
-      }
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      total,
+      limit: limitNum
     });
   } catch (error) {
-    next(error);
+    res.status(500);
+    throw new Error('Error fetching books: ' + error.message);
   }
 };
 
