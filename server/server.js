@@ -24,13 +24,13 @@ const app = express();
 
 // Middleware
 const allowedOrigins = [
-  process.env.CLIENT_URL, // Development/Production frontend URL from env
+  process.env.CLIENT_URL, // Development frontend URL
+  'https://bibliobuzz.vercel.app', // Production frontend URL
 ];
 
 // Add production URL if in production
 if (process.env.NODE_ENV === 'production') {
-  // In production, we'll have the Vercel URL in CLIENT_URL
-  console.log('Production mode - Using client URL:', process.env.CLIENT_URL);
+  console.log('Production mode - Using client URLs:', allowedOrigins);
 }
 
 app.use(cors({
@@ -44,7 +44,9 @@ app.use(cors({
     }
     return callback(null, true);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(cookieParser());
