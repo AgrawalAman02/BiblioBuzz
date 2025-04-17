@@ -74,8 +74,12 @@ export const bookApi = createApi({
     
     // Get featured books
     getFeaturedBooks: builder.query({
-      query: () => ({
+      query: (params = {}) => ({
         url: '/books/featured',
+        params: {
+          page: params.page || 1,
+          limit: params.limit || 6
+        }
       }),
       providesTags: ['Books'],
     }),

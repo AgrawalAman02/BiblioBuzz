@@ -220,11 +220,26 @@ export const deleteBook = async (req, res, next) => {
  */
 export const getFeaturedBooks = async (req, res, next) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (page - 1) * limit;
+
+    // Get total count of featured books
+    const total = await Book.countDocuments({ featured: true });
+    
+    // Get featured books with pagination
     const books = await Book.find({ featured: true })
       .sort({ averageRating: -1 })
-      .limit(6);
+      .skip(skip)
+      .limit(limit);
       
-    res.status(200).json(books);
+    res.status(200).json({
+      books,
+      page,
+      pages: Math.ceil(total / limit),
+      total,
+      limit
+    });
   } catch (error) {
     next(error);
   }
