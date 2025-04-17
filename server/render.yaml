@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: book-review-api
+    name: bibliobuzz-api
     env: node
     buildCommand: npm install
     startCommand: node server.js

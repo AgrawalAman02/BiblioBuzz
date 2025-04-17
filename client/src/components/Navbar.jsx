@@ -43,7 +43,7 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex justify-between items-center h-16">
           <Link to="/" className="text-xl font-bold hover:text-blue-200 transition-colors">
-            BookReviews
+            BiblioBuzz
           </Link>
           
           <ul className="flex space-x-1">
@@ -97,7 +97,7 @@ const Navbar = () => {
         
         {/* Mobile Navigation */}
         <div className="md:hidden flex justify-between items-center h-14">
-          <Link to="/" className="text-xl font-bold">BookReviews</Link>
+          <Link to="/" className="text-xl font-bold">BiblioBuzz</Link>
           
           <button 
             className="p-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"

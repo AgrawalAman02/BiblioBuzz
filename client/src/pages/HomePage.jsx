@@ -17,7 +17,7 @@ const HomePage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <section className="mb-12">
-        <h1 className="text-4xl font-bold text-center mb-8">Welcome to Book Reviews</h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Welcome to BiblioBuzz</h1>
         <p className="text-center text-lg mb-8">
           Discover new books, share your thoughts, and connect with other readers.
         </p>

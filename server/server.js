@@ -63,7 +63,7 @@ app.get('/health', (req, res) => {
 
 // Root route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the Book Review API' });
+  res.json({ message: 'Welcome to the BiblioBuzz API' });
 });
 
 // Error handling middleware
