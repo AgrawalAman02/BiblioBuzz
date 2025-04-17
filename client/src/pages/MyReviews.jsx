@@ -60,7 +60,7 @@ const MyReviews = () => {
         </h1>
         {userInfo?.isAdmin && (
           <div className="text-sm text-gray-500">
-            Viewing as admin - You can manage all reviews
+            Viewing as admin - You can manage all reviews but only edit your own
           </div>
         )}
       </div>
@@ -87,8 +87,8 @@ const MyReviews = () => {
               showBookInfo={true}
               onDelete={userInfo?.isAdmin || review.user?._id === userInfo?._id ? handleDeleteReview : undefined}
               onEdit={
-                // Allow edit if admin or review owner
-                (userInfo?.isAdmin || review.user?._id === userInfo?._id) ? 
+                // Only allow review owner to edit their review
+                review.user?._id === userInfo?._id ? 
                 () => handleEditReview(review._id) : 
                 undefined
               }

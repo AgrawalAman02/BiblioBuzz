@@ -245,8 +245,8 @@ const BookDetail = () => {
                   onLike={() => handleReviewLike(review._id)}
                   onUnlike={() => unlikeReview(review._id)}
                   onEdit={
-                    // Allow edit if admin or review owner
-                    (isAdmin || review.user?._id === userInfo?._id) ? 
+                    // Only allow review owner to edit their review
+                    review.user?._id === userInfo?._id ? 
                     () => handleReviewEdit(review._id) : 
                     undefined
                   }
