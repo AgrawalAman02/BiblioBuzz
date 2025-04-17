@@ -86,7 +86,12 @@ const MyReviews = () => {
               review={review}
               showBookInfo={true}
               onDelete={userInfo?.isAdmin || review.user?._id === userInfo?._id ? handleDeleteReview : undefined}
-              onEdit={review.user?._id === userInfo?._id ? handleEditReview : undefined}
+              onEdit={
+                // Allow edit if admin or review owner
+                (userInfo?.isAdmin || review.user?._id === userInfo?._id) ? 
+                () => handleEditReview(review._id) : 
+                undefined
+              }
               onLike={() => likeReview(review._id)}
               onUnlike={() => unlikeReview(review._id)}
             />
