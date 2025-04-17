@@ -16,13 +16,20 @@ export const bookApi = createApi({
     // Get all books with pagination
     getBooks: builder.query({
       query: (params = {}) => {
-        const { page = 1, limit = 9, search = '', sort = 'title', ...rest } = params;
+        const { page = 1, limit = 9, search = '', sort = 'title', genre, featured } = params;
+        const queryParams = {
+          page,
+          limit,
+          search,
+          sort,
+          ...(genre && { genre }),
+          ...(featured !== undefined && { featured })
+        };
         return {
           url: '/books',
-          params: { page, limit, search, sort, ...rest },
+          params: queryParams
         };
       },
-      providesTags: ['Books'],
       transformResponse: (response) => ({
         books: response.books,
         page: response.page,
@@ -30,6 +37,7 @@ export const bookApi = createApi({
         total: response.total,
         limit: response.limit
       }),
+      providesTags: ['Books']
     }),
     
     // Get a single book by ID
@@ -80,6 +88,13 @@ export const bookApi = createApi({
           page: params.page || 1,
           limit: params.limit || 6
         }
+      }),
+      transformResponse: (response) => ({
+        books: response.books,
+        page: response.page,
+        pages: response.pages,
+        total: response.total,
+        limit: response.limit
       }),
       providesTags: ['Books'],
     }),

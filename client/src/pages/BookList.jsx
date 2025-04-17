@@ -13,13 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const BookList = () => {
-  // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [genreFilter, setGenreFilter] = useState('');
-  const [sortBy, setSortBy] = useState('title'); // title, author, rating, year
+  const [sortBy, setSortBy] = useState('title');
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // State for debounced search
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Reset to first page when filters change
@@ -27,7 +24,7 @@ const BookList = () => {
     setCurrentPage(1);
   }, [debouncedSearch, genreFilter, sortBy]);
 
-  // Use effect to debounce search
+  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -45,9 +42,9 @@ const BookList = () => {
     limit: 9
   };
   
-  // Fetch books from the API
   const { data, error, isLoading } = useGetBooksQuery(queryParams);
   const books = data?.books || [];
+  const totalPages = data?.pages || 1;
   const allGenres = [...new Set(books.flatMap(book => book.genre || []))];
 
   return (
@@ -114,76 +111,78 @@ const BookList = () => {
           <p className="text-gray-500">No books found. Try adjusting your filters.</p>
         </div>
       ) : (
-        /* Books Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {books.map((book) => (
-            <Card key={book._id} className="overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="h-64 overflow-hidden">
-                <img 
-                  src={book.coverImage} 
-                  alt={book.title} 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=1000&auto=format&fit=crop';
-                  }}
-                />
-              </div>
-              <CardHeader>
-                <CardTitle>{book.title}</CardTitle>
-                <CardDescription>{book.author} • {book.publicationYear}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center mb-2">
-                  <span className="text-yellow-500">★</span>
-                  <span className="ml-1">{book.averageRating}</span>
+        <>
+          {/* Books Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            {books.map((book) => (
+              <Card key={book._id} className="overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="h-64 overflow-hidden">
+                  <img 
+                    src={book.coverImage} 
+                    alt={book.title} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=1000&auto=format&fit=crop';
+                    }}
+                  />
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {book.genre && book.genre.map(g => (
-                    <span key={g} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button asChild className="w-full">
-                  <Link to={`/books/${book._id}`}>View Details</Link>
+                <CardHeader>
+                  <CardTitle>{book.title}</CardTitle>
+                  <CardDescription>{book.author} • {book.publicationYear}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center mb-2">
+                    <span className="text-yellow-500">★</span>
+                    <span className="ml-1">{book.averageRating}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {book.genre && book.genre.map(g => (
+                      <span key={g} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button asChild className="w-full">
+                    <Link to={`/books/${book._id}`}>View Details</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-8">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+
+              {[...Array(totalPages)].map((_, index) => (
+                <Button
+                  key={index + 1}
+                  variant={currentPage === index + 1 ? "default" : "outline"}
+                  onClick={() => setCurrentPage(index + 1)}
+                >
+                  {index + 1}
                 </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
-      
-      {/* Pagination */}
-      {data && data.pages > 1 && (
-        <div className="mt-8 flex justify-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
+              ))}
 
-          {[...Array(data.pages).keys()].map(page => (
-            <Button
-              key={page + 1}
-              variant={currentPage === page + 1 ? "default" : "outline"}
-              onClick={() => setCurrentPage(page + 1)}
-            >
-              {page + 1}
-            </Button>
-          ))}
-
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, data.pages))}
-            disabled={currentPage === data.pages}
-          >
-            Next
-          </Button>
-        </div>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
