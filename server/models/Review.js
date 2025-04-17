@@ -28,7 +28,11 @@ const ReviewSchema = new mongoose.Schema({
   likes: {
     type: Number,
     default: 0
-  }
+  },
+  likedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 }, { timestamps: true });
 
 // Ensure a user can only review a book once

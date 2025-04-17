@@ -75,10 +75,28 @@ const BookDetail = () => {
   };
 
   const handleReviewLike = async (reviewId) => {
+    if (!isAuthenticated) {
+      alert('Please log in to like reviews');
+      return;
+    }
+    
     try {
       await likeReview(reviewId).unwrap();
     } catch (err) {
       console.error('Failed to like review:', err);
+    }
+  };
+  
+  const handleReviewUnlike = async (reviewId) => {
+    if (!isAuthenticated) {
+      alert('Please log in to unlike reviews');
+      return;
+    }
+    
+    try {
+      await unlikeReview(reviewId).unwrap();
+    } catch (err) {
+      console.error('Failed to unlike review:', err);
     }
   };
   
@@ -243,7 +261,7 @@ const BookDetail = () => {
                   review={review}
                   onDelete={isAdmin || review.user?._id === userInfo?._id ? handleReviewDelete : undefined}
                   onLike={() => handleReviewLike(review._id)}
-                  onUnlike={() => unlikeReview(review._id)}
+                  onUnlike={() => handleReviewUnlike(review._id)}
                   onEdit={
                     // Only allow review owner to edit their review
                     review.user?._id === userInfo?._id ? 

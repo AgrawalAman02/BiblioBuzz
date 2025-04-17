@@ -23,7 +23,18 @@ export const getReviews = async (req, res) => {
       .populate('book', 'title author')
       .sort({ createdAt: -1 });
     
-    res.status(200).json(reviews);
+    // Transform reviews to include hasLiked status if user is authenticated
+    const transformedReviews = reviews.map(review => {
+      const reviewObj = review.toObject();
+      if (req.user) {
+        reviewObj.hasLiked = req.user.likedReviews.includes(review._id);
+      } else {
+        reviewObj.hasLiked = false;
+      }
+      return reviewObj;
+    });
+    
+    res.status(200).json(transformedReviews);
   } catch (error) {
     res.status(res.statusCode === 200 ? 500 : res.statusCode);
     throw new Error('Error fetching reviews: ' + error.message);
@@ -64,7 +75,14 @@ export const getUserReviews = async (req, res) => {
       .populate('book', 'title author coverImage')
       .sort({ createdAt: -1 });
     
-    res.status(200).json(reviews);
+    // Transform reviews to include hasLiked status
+    const transformedReviews = reviews.map(review => {
+      const reviewObj = review.toObject();
+      reviewObj.hasLiked = req.user.likedReviews.includes(review._id);
+      return reviewObj;
+    });
+    
+    res.status(200).json(transformedReviews);
   } catch (error) {
     res.status(res.statusCode === 200 ? 500 : res.statusCode);
     throw new Error('Error fetching user reviews: ' + error.message);
@@ -213,29 +231,23 @@ export const deleteReview = async (req, res) => {
 export const likeReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
-    const user = await User.findById(req.user._id);
-    
     if (!review) {
       res.status(404);
       throw new Error('Review not found');
     }
-    
-    // Check if user has already liked this review
-    const hasLiked = user.likedReviews.includes(review._id);
-    if (hasLiked) {
-      res.status(400);
-      throw new Error('Review already liked');
+
+    // Add review to user's liked reviews if not already liked
+    const user = await User.findById(req.user._id);
+    if (!user.likedReviews.includes(review._id)) {
+      user.likedReviews.push(review._id);
+      await user.save();
+
+      // Increment likes count
+      review.likes += 1;
+      await review.save();
     }
-    
-    // Add review to user's liked reviews
-    user.likedReviews.push(review._id);
-    await user.save();
-    
-    // Increment likes count
-    review.likes += 1;
-    await review.save();
-    
-    res.status(200).json({ 
+
+    res.json({
       likes: review.likes,
       hasLiked: true
     });
@@ -253,29 +265,24 @@ export const likeReview = async (req, res) => {
 export const unlikeReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
-    const user = await User.findById(req.user._id);
-    
     if (!review) {
       res.status(404);
       throw new Error('Review not found');
     }
-    
-    // Check if user has liked this review
-    const hasLiked = user.likedReviews.includes(review._id);
-    if (!hasLiked) {
-      res.status(400);
-      throw new Error('Review not liked yet');
+
+    // Remove review from user's liked reviews if present
+    const user = await User.findById(req.user._id);
+    const index = user.likedReviews.indexOf(review._id);
+    if (index > -1) {
+      user.likedReviews.splice(index, 1);
+      await user.save();
+
+      // Decrement likes count
+      review.likes = Math.max(0, review.likes - 1);
+      await review.save();
     }
-    
-    // Remove review from user's liked reviews
-    user.likedReviews = user.likedReviews.filter(id => id.toString() !== review._id.toString());
-    await user.save();
-    
-    // Decrement likes count
-    review.likes = Math.max(0, review.likes - 1);
-    await review.save();
-    
-    res.status(200).json({ 
+
+    res.json({
       likes: review.likes,
       hasLiked: false
     });

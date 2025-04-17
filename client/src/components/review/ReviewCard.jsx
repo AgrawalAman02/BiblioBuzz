@@ -63,6 +63,7 @@ const ReviewCard = ({
         <ReviewLike 
           reviewId={review._id}
           initialLikes={review.likes}
+          initialHasLiked={review.hasLiked}
           onLike={() => onLike(review._id)}
           onUnlike={() => onUnlike(review._id)}
         />

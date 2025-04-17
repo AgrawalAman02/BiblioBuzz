@@ -1,108 +1,109 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { authApi } from './authApi';
+import { getCookie } from '@/lib/cookie';
 
 export const reviewApi = createApi({
   reducerPath: 'reviewApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api',
-    credentials: 'include',
+    prepareHeaders: (headers) => {
+      const token = getCookie('jwt');
+      if (token) {
+        headers.set('authorization', `Bearer ${token}`);
+      }
+      return headers;
+    },
   }),
-  tagTypes: ['Review', 'Reviews', 'UserReviews'],
+  tagTypes: ['Reviews'],
   endpoints: (builder) => ({
-    // Get reviews for a specific book
     getReviews: builder.query({
       query: (bookId) => ({
         url: '/reviews',
-        params: bookId ? { book: bookId } : undefined
+        params: bookId ? { book: bookId } : undefined,
       }),
       providesTags: ['Reviews'],
     }),
-
-    // Get a specific review
-    getReview: builder.query({
-      query: (id) => `/reviews/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Review', id }],
-    }),
-
-    // Get user's reviews
     getUserReviews: builder.query({
       query: () => '/reviews/user',
-      providesTags: ['UserReviews'],
+      providesTags: ['Reviews'],
     }),
-
-    // Create a review
+    getReview: builder.query({
+      query: (id) => `/reviews/${id}`,
+      providesTags: ['Reviews'],
+    }),
     createReview: builder.mutation({
       query: (data) => ({
         url: '/reviews',
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: ['Reviews', 'UserReviews'],
+      invalidatesTags: ['Reviews'],
     }),
-
-    // Update a review
     updateReview: builder.mutation({
       query: ({ id, ...data }) => ({
         url: `/reviews/${id}`,
         method: 'PUT',
         body: data,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'Review', id },
-        'Reviews',
-        'UserReviews'
-      ],
+      invalidatesTags: ['Reviews'],
     }),
-
-    // Delete a review
     deleteReview: builder.mutation({
       query: (id) => ({
         url: `/reviews/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Reviews', 'UserReviews'],
+      invalidatesTags: ['Reviews'],
     }),
-
-    // Like a review
     likeReview: builder.mutation({
       query: (id) => ({
         url: `/reviews/${id}/like`,
         method: 'PUT',
       }),
-      invalidatesTags: (result, error, id) => [
-        { type: 'Review', id }, 
-        'Reviews', 
-        'UserReviews'
-      ],
-      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+      // Optimistic update
+      async onQueryStarted(id, { dispatch, queryFulfilled, getState }) {
         try {
-          await queryFulfilled;
-          // Invalidate the user data to refresh likedReviews array
-          dispatch(authApi.util.invalidateTags(['User']));
-        } catch (err) {
-          console.error('Error liking review:', err);
+          const result = await queryFulfilled;
+          // Update all queries that include this review
+          const updateQueries = ['getReviews', 'getUserReviews'];
+          updateQueries.forEach(queryName => {
+            dispatch(
+              reviewApi.util.updateQueryData(queryName, undefined, (draft) => {
+                const review = draft?.find(r => r._id === id);
+                if (review) {
+                  review.likes = result.data.likes;
+                  review.hasLiked = result.data.hasLiked;
+                }
+              })
+            );
+          });
+        } catch {
+          // If the mutation fails, the cache will be rolled back automatically
         }
       },
     }),
-
-    // Unlike a review
     unlikeReview: builder.mutation({
       query: (id) => ({
         url: `/reviews/${id}/unlike`,
         method: 'PUT',
       }),
-      invalidatesTags: (result, error, id) => [
-        { type: 'Review', id }, 
-        'Reviews', 
-        'UserReviews'
-      ],
-      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+      // Optimistic update
+      async onQueryStarted(id, { dispatch, queryFulfilled, getState }) {
         try {
-          await queryFulfilled;
-          // Invalidate the user data to refresh likedReviews array
-          dispatch(authApi.util.invalidateTags(['User']));
-        } catch (err) {
-          console.error('Error unliking review:', err);
+          const result = await queryFulfilled;
+          // Update all queries that include this review
+          const updateQueries = ['getReviews', 'getUserReviews'];
+          updateQueries.forEach(queryName => {
+            dispatch(
+              reviewApi.util.updateQueryData(queryName, undefined, (draft) => {
+                const review = draft?.find(r => r._id === id);
+                if (review) {
+                  review.likes = result.data.likes;
+                  review.hasLiked = result.data.hasLiked;
+                }
+              })
+            );
+          });
+        } catch {
+          // If the mutation fails, the cache will be rolled back automatically
         }
       },
     }),
@@ -111,8 +112,8 @@ export const reviewApi = createApi({
 
 export const {
   useGetReviewsQuery,
-  useGetReviewQuery,
   useGetUserReviewsQuery,
+  useGetReviewQuery,
   useCreateReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,

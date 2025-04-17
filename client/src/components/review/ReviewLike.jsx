@@ -1,41 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Button } from "@/components/ui/button";
-import { useLikeReviewMutation, useUnlikeReviewMutation, useGetReviewsQuery } from '@/features/api/reviewApi';
-import { useGetMeQuery } from '@/features/api/authApi';
+import { useLikeReviewMutation, useUnlikeReviewMutation } from '@/features/api/reviewApi';
 
-const ReviewLike = ({ reviewId, initialLikes }) => {
+const ReviewLike = ({ reviewId, initialLikes, initialHasLiked }) => {
   const [likes, setLikes] = useState(initialLikes);
-  const [hasLiked, setHasLiked] = useState(false);
-  const { isAuthenticated, userInfo } = useSelector((state) => state.auth);
+  const [hasLiked, setHasLiked] = useState(initialHasLiked);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   
-  // RTK Query hooks for liking/unliking
   const [likeReview, { isLoading: isLiking }] = useLikeReviewMutation();
   const [unlikeReview, { isLoading: isUnliking }] = useUnlikeReviewMutation();
-  
-  // Get fresh user data to determine liked status
-  const { data: userData, refetch: refetchUserData } = useGetMeQuery(undefined, { 
-    skip: !isAuthenticated 
-  });
 
-  // Check if user has liked this review from most up-to-date data
-  useEffect(() => {
-    // Check user data first (it's more up-to-date)
-    if (userData?.likedReviews) {
-      const isLiked = userData.likedReviews.some(id => id === reviewId);
-      setHasLiked(isLiked);
-    } 
-    // Fall back to userInfo from Redux state
-    else if (userInfo?.likedReviews) {
-      const isLiked = userInfo.likedReviews.some(id => id === reviewId);
-      setHasLiked(isLiked);
-    }
-  }, [reviewId, userInfo, userData]);
-  
-  // Update likes count when initialLikes changes
+  // Update likes count and hasLiked when props change
   useEffect(() => {
     setLikes(initialLikes);
-  }, [initialLikes]);
+    setHasLiked(initialHasLiked);
+  }, [initialLikes, initialHasLiked]);
 
   const handleToggleLike = async () => {
     if (!isAuthenticated) {
@@ -51,25 +31,15 @@ const ReviewLike = ({ reviewId, initialLikes }) => {
         // Unlike the review
         const result = await unlikeReview(reviewId).unwrap();
         setLikes(result.likes);
-        setHasLiked(false);
-        // Explicitly refetch user data to ensure it's up-to-date
-        refetchUserData();
+        setHasLiked(result.hasLiked);
       } else {
         // Like the review
         const result = await likeReview(reviewId).unwrap();
         setLikes(result.likes);
-        setHasLiked(true);
-        // Explicitly refetch user data to ensure it's up-to-date
-        refetchUserData();
+        setHasLiked(result.hasLiked);
       }
     } catch (error) {
       console.error('Failed to toggle like:', error);
-      // If we get an error that the review is already liked, update the UI accordingly
-      if (error?.data?.message?.includes('already liked')) {
-        setHasLiked(true);
-      } else if (error?.data?.message?.includes('not liked')) {
-        setHasLiked(false);
-      }
     }
   };
 
