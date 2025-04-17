@@ -22,10 +22,11 @@ connectDB();
 
 const app = express();
 
-// Middleware
+// CORS Configuration
 const allowedOrigins = [
   process.env.CLIENT_URL, // Development frontend URL
   'https://bibliobuzz.vercel.app', // Production frontend URL
+  'http://localhost:5173', // Local development
 ];
 
 // Add production URL if in production
@@ -33,6 +34,7 @@ if (process.env.NODE_ENV === 'production') {
   console.log('Production mode - Using client URLs:', allowedOrigins);
 }
 
+// CORS middleware configuration
 app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps, curl requests)
@@ -45,11 +47,23 @@ app.use(cors({
     return callback(null, true);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Set-Cookie'],
 }));
 
+// Additional headers for CORS preflight
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  next();
+});
+
+// Cookie parser middleware - must come after CORS
 app.use(cookieParser());
+
+// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
