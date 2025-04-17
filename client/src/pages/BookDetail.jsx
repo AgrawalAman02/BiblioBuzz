@@ -1,38 +1,47 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useGetBookQuery } from '@/features/api/bookApi';
-import { useGetReviewsQuery, useCreateReviewMutation, useLikeReviewMutation } from '@/features/api/reviewApi';
+import { useGetBookQuery, useDeleteBookMutation, useUpdateBookMutation } from '@/features/api/bookApi';
+import { useGetReviewsQuery, useCreateReviewMutation, useLikeReviewMutation, useDeleteReviewMutation } from '@/features/api/reviewApi';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import BookForm from '@/components/admin/BookForm';
+import ReviewCard from '@/components/review/ReviewCard';
+import ReviewForm from '@/components/review/ReviewForm';
 
 const BookDetail = () => {
   const { id } = useParams();
-  const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', content: '' });
+  const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
   
-  // Get authentication state
+  // Get authentication state and admin status
   const { userInfo, isAuthenticated } = useSelector((state) => state.auth);
+  const isAdmin = userInfo?.isAdmin;
   
   // Fetch book and reviews data
   const { data: book, error: bookError, isLoading: bookLoading } = useGetBookQuery(id);
-  const { data: reviews, error: reviewsError, isLoading: reviewsLoading } = useGetReviewsQuery(id);
+  const { data: reviews, isLoading: reviewsLoading } = useGetReviewsQuery(id);
   
-  // Mutations for creating reviews and liking reviews
-  const [createReview, { isLoading: isSubmitting }] = useCreateReviewMutation();
+  // Mutations
+  const [deleteBook] = useDeleteBookMutation();
+  const [updateBook] = useUpdateBookMutation();
+  const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation();
+  const [deleteReview] = useDeleteReviewMutation();
   const [likeReview] = useLikeReviewMutation();
 
-  const handleReviewChange = (e) => {
-    const { name, value } = e.target;
-    setReviewForm({
-      ...reviewForm,
-      [name]: name === 'rating' ? parseInt(value) : value
-    });
+  const handleDeleteBook = async () => {
+    if (!isAdmin) return;
+    
+    if (window.confirm('Are you sure you want to delete this book? This action cannot be undone.')) {
+      try {
+        await deleteBook(id).unwrap();
+        navigate('/books');
+      } catch (err) {
+        console.error('Failed to delete book:', err);
+      }
+    }
   };
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleReviewSubmit = async (reviewData) => {
     if (!isAuthenticated) {
       alert('Please log in to submit a review');
       return;
@@ -41,24 +50,24 @@ const BookDetail = () => {
     try {
       await createReview({
         book: id,
-        rating: reviewForm.rating,
-        title: reviewForm.title,
-        content: reviewForm.content
+        ...reviewData
       }).unwrap();
-      
-      // Reset form
-      setReviewForm({ rating: 5, title: '', content: '' });
     } catch (err) {
       alert(err.data?.message || 'Error submitting review');
     }
   };
-  
-  const handleLikeReview = async (reviewId) => {
-    if (!isAuthenticated) {
-      alert('Please log in to like reviews');
-      return;
-    }
+
+  const handleReviewDelete = async (reviewId) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
     
+    try {
+      await deleteReview(reviewId).unwrap();
+    } catch (err) {
+      console.error('Failed to delete review:', err);
+    }
+  };
+
+  const handleReviewLike = async (reviewId) => {
     try {
       await likeReview(reviewId).unwrap();
     } catch (err) {
@@ -66,7 +75,6 @@ const BookDetail = () => {
     }
   };
 
-  // Handle loading states
   if (bookLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -75,7 +83,6 @@ const BookDetail = () => {
     );
   }
 
-  // Handle error states
   if (bookError) {
     return (
       <div className="text-center py-8 text-red-500">
@@ -85,7 +92,6 @@ const BookDetail = () => {
     );
   }
 
-  // If no book is found
   if (!book) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -94,11 +100,50 @@ const BookDetail = () => {
     );
   }
 
+  if (isEditing) {
+    return (
+      <div className="py-8">
+        <Button onClick={() => setIsEditing(false)} className="mb-4">
+          ← Back to Book Details
+        </Button>
+        <BookForm 
+          initialData={book} 
+          onSubmit={async (data) => {
+            try {
+              await updateBook({ id, ...data }).unwrap();
+              setIsEditing(false);
+            } catch (err) {
+              console.error('Failed to update book:', err);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="py-8">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        {/* Admin Actions Bar */}
+        {isAdmin && (
+          <div className="bg-gray-50 p-4 flex justify-end space-x-4 border-b">
+            <Button 
+              variant="outline"
+              onClick={() => setIsEditing(true)}
+            >
+              Edit Book
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteBook}
+            >
+              Delete Book
+            </Button>
+          </div>
+        )}
+
+        {/* Book Details */}
         <div className="md:flex">
-          {/* Book Cover */}
           <div className="md:w-1/3">
             <img 
               src={book.coverImage} 
@@ -110,7 +155,6 @@ const BookDetail = () => {
             />
           </div>
           
-          {/* Book Details */}
           <div className="md:w-2/3 p-6">
             <h1 className="text-3xl font-bold mb-2">{book.title}</h1>
             <h2 className="text-xl text-gray-600 mb-4">by {book.author}</h2>
@@ -147,8 +191,6 @@ const BookDetail = () => {
               <h3 className="font-semibold mb-2">Description</h3>
               <p className="text-gray-700">{book.description}</p>
             </div>
-            
-            <Button>Add to Reading List</Button>
           </div>
         </div>
         
@@ -156,66 +198,21 @@ const BookDetail = () => {
         <div className="p-6 border-t">
           <h2 className="text-2xl font-bold mb-6">Reviews</h2>
           
-          {/* Review Form - Only show if user is authenticated */}
+          {/* Review Form */}
           {isAuthenticated ? (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Write a Review</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleReviewSubmit}>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">Rating</label>
-                    <select
-                      name="rating"
-                      value={reviewForm.rating}
-                      onChange={handleReviewChange}
-                      className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="5">5 - Excellent</option>
-                      <option value="4">4 - Good</option>
-                      <option value="3">3 - Average</option>
-                      <option value="2">2 - Poor</option>
-                      <option value="1">1 - Terrible</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">Title</label>
-                    <Input
-                      name="title"
-                      value={reviewForm.title}
-                      onChange={handleReviewChange}
-                      placeholder="Summarize your review"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">Review</label>
-                    <textarea
-                      name="content"
-                      value={reviewForm.content}
-                      onChange={handleReviewChange}
-                      placeholder="Share your thoughts about this book"
-                      required
-                      className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    ></textarea>
-                  </div>
-                  
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Submitting...' : 'Submit Review'}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            <div className="mb-8">
+              <ReviewForm
+                onSubmit={handleReviewSubmit}
+                isSubmitting={isSubmittingReview}
+              />
+            </div>
           ) : (
-            <Card className="mb-8 bg-gray-50">
-              <CardContent className="text-center py-6">
-                <p className="mb-4">Please log in to write a review</p>
-                <Button>Log In</Button>
-              </CardContent>
-            </Card>
+            <div className="text-center bg-gray-50 p-6 rounded-lg mb-8">
+              <p className="mb-4">Please log in to write a review</p>
+              <Button onClick={() => navigate('/login')}>
+                Log In
+              </Button>
+            </div>
           )}
           
           {/* Reviews List */}
@@ -223,50 +220,21 @@ const BookDetail = () => {
             <div className="flex justify-center items-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
-          ) : reviewsError ? (
-            <div className="text-center py-4 text-red-500">
-              <p>Failed to load reviews. Please try again later.</p>
-            </div>
           ) : reviews?.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No reviews yet. Be the first to review!</p>
             </div>
           ) : (
-            reviews?.map(review => (
-              <Card key={review._id} className="mb-4">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">{review.title}</CardTitle>
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className="text-yellow-500">
-                          {i < review.rating ? '★' : '☆'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    By {review.user?.username || 'Anonymous'} on {new Date(review.createdAt).toLocaleDateString()}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700">{review.content}</p>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <button 
-                      className="flex items-center hover:text-blue-600"
-                      onClick={() => handleLikeReview(review._id)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                      </svg>
-                      {review.likes} likes
-                    </button>
-                  </div>
-                </CardFooter>
-              </Card>
-            ))
+            <div className="space-y-4">
+              {reviews?.map((review) => (
+                <ReviewCard
+                  key={review._id}
+                  review={review}
+                  onDelete={handleReviewDelete}
+                  onLike={() => handleReviewLike(review._id)}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>

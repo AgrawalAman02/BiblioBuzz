@@ -2,23 +2,24 @@ import Review from '../models/Review.js';
 import Book from '../models/Book.js';
 
 /**
- * Get reviews for a specific book
- * @route GET /api/reviews?book=:bookId
+ * Get reviews for a specific book or all reviews
+ * @route GET /api/reviews
  * @access Public
  */
 export const getReviews = async (req, res) => {
   try {
     const { book: bookId } = req.query;
+    let query = {};
     
-    // Validate book ID is provided
-    if (!bookId) {
-      res.status(400);
-      throw new Error('Book ID is required');
+    // If bookId is provided, get reviews for that book
+    if (bookId) {
+      query.book = bookId;
     }
     
-    // Find all reviews for the specified book
-    const reviews = await Review.find({ book: bookId })
+    // Find reviews based on query
+    const reviews = await Review.find(query)
       .populate('user', 'username')
+      .populate('book', 'title author')
       .sort({ createdAt: -1 });
     
     res.status(200).json(reviews);

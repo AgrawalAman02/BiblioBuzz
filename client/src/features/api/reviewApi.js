@@ -4,100 +4,78 @@ export const reviewApi = createApi({
   reducerPath: 'reviewApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api',
-    credentials: 'include', // Include cookies with every request
-    prepareHeaders: (headers) => {
-      // Set content type
-      headers.set('Content-Type', 'application/json');
-      return headers;
-    },
+    credentials: 'include',
   }),
-  tagTypes: ['Review', 'Reviews', 'UserReviews'],
+  tagTypes: ['Review', 'Reviews'],
   endpoints: (builder) => ({
     // Get reviews for a specific book
-    getReviewsByBook: builder.query({
-      query: ({ bookId, page = 1, limit = 10 }) => ({
-        url: `/reviews/book/${bookId}`,
-        params: { page, limit },
-      }),
-      providesTags: (result, error, arg) => 
-        result
-          ? [...result.reviews.map(({ _id }) => ({ type: 'Review', id: _id })), 'Reviews']
-          : ['Reviews'],
-    }),
-
-    // Get all reviews for a book
     getReviews: builder.query({
       query: (bookId) => ({
         url: '/reviews',
-        params: { book: bookId }
+        params: bookId ? { book: bookId } : undefined
       }),
-      providesTags: (result) => 
-        result
-          ? [...result.map(({ _id }) => ({ type: 'Review', id: _id })), 'Reviews']
-          : ['Reviews'],
+      providesTags: ['Reviews'],
     }),
 
-    // Get reviews by current user
-    getUserReviews: builder.query({
-      query: () => ({
-        url: '/reviews/user',
-      }),
-      providesTags: ['UserReviews'],
-    }),
-    
-    // Get a single review by ID
-    getReviewById: builder.query({
-      query: (reviewId) => ({
-        url: `/reviews/${reviewId}`,
-      }),
+    // Get a specific review
+    getReview: builder.query({
+      query: (id) => `/reviews/${id}`,
       providesTags: (result, error, id) => [{ type: 'Review', id }],
     }),
-    
-    // Create a new review
+
+    // Get user's reviews
+    getUserReviews: builder.query({
+      query: () => '/reviews/user',
+      providesTags: ['Reviews'],
+    }),
+
+    // Create a review
     createReview: builder.mutation({
-      query: (reviewData) => ({
+      query: (data) => ({
         url: '/reviews',
         method: 'POST',
-        body: reviewData,
+        body: data,
       }),
-      invalidatesTags: ['Reviews', 'UserReviews'],
+      invalidatesTags: ['Reviews'],
     }),
-    
+
     // Update a review
     updateReview: builder.mutation({
-      query: ({ id, ...reviewData }) => ({
+      query: ({ id, ...data }) => ({
         url: `/reviews/${id}`,
         method: 'PUT',
-        body: reviewData,
+        body: data,
       }),
-      invalidatesTags: ['Reviews', 'UserReviews'],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Review', id },
+        'Reviews',
+      ],
     }),
-    
+
     // Delete a review
     deleteReview: builder.mutation({
       query: (id) => ({
         url: `/reviews/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Reviews', 'UserReviews'],
+      invalidatesTags: ['Reviews'],
     }),
-    
+
     // Like a review
     likeReview: builder.mutation({
       query: (id) => ({
         url: `/reviews/${id}/like`,
         method: 'PUT',
       }),
-      invalidatesTags: ['Reviews'],
+      invalidatesTags: (result, error, id) => [{ type: 'Review', id }],
     }),
   }),
 });
 
 export const {
-  useGetReviewsByBookQuery,
   useGetReviewsQuery,
+  useGetReviewQuery,
   useGetUserReviewsQuery,
-  useGetReviewByIdQuery,
   useCreateReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,

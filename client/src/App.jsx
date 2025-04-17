@@ -3,6 +3,8 @@ import { useGetMeQuery } from '@/features/api/authApi';
 import './App.css';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/admin/AdminRoute';
+import AdminBookList from './components/admin/BookList';
 import HomePage from './pages/HomePage';
 import BookList from './pages/BookList';
 import BookDetail from './pages/BookDetail';
@@ -54,6 +56,13 @@ function App() {
                 <ProtectedRoute>
                   <EditReview />
                 </ProtectedRoute>
+              } />
+
+              {/* Admin routes */}
+              <Route path="/admin/books" element={
+                <AdminRoute>
+                  <AdminBookList />
+                </AdminRoute>
               } />
             </Routes>
           )}

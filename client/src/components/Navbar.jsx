@@ -46,6 +46,13 @@ const Navbar = () => {
               <>
                 <li><Link to="/profile" className="hover:text-blue-300">Profile</Link></li>
                 <li><Link to="/my-reviews" className="hover:text-blue-300">My Reviews</Link></li>
+                {userInfo?.isAdmin && (
+                  <li>
+                    <Link to="/admin/books" className="hover:text-blue-300">
+                      Manage Books
+                    </Link>
+                  </li>
+                )}
               </>
             )}
           </ul>
@@ -63,7 +70,12 @@ const Navbar = () => {
             ) : (
               <>
                 <span className="flex items-center mr-4">
-                  Welcome, {userInfo?.username || 'User'}!
+                  Welcome, {userInfo?.username || 'User'}
+                  {userInfo?.isAdmin && (
+                    <span className="ml-2 px-2 py-1 bg-yellow-500 text-xs rounded-full">
+                      Admin
+                    </span>
+                  )}
                 </span>
                 <Button 
                   variant="secondary" 
@@ -118,6 +130,13 @@ const Navbar = () => {
                       My Reviews
                     </Link>
                   </li>
+                  {userInfo?.isAdmin && (
+                    <li>
+                      <Link to="/admin/books" className="block py-2 hover:text-blue-300" onClick={() => setMobileMenuOpen(false)}>
+                        Manage Books
+                      </Link>
+                    </li>
+                  )}
                 </>
               )}
             </ul>
@@ -142,8 +161,13 @@ const Navbar = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="py-2">
-                    Welcome, {userInfo?.username || 'User'}!
+                  <div className="py-2 flex items-center">
+                    Welcome, {userInfo?.username || 'User'}
+                    {userInfo?.isAdmin && (
+                      <span className="ml-2 px-2 py-1 bg-yellow-500 text-xs rounded-full">
+                        Admin
+                      </span>
+                    )}
                   </div>
                   <Button 
                     variant="secondary" 
